@@ -24,7 +24,6 @@ locals {
 	bindings = {
 		"roles/iam.serviceAccountTokenCreator" = "serviceAccount:${google_service_account.service_account.email}"
 		"roles/iam.workloadIdentityUser"           = "serviceAccount:${google_service_account.service_account.email}"
-
 	}
 }
 
@@ -57,6 +56,15 @@ resource "google_project_iam_binding" "service_account_iam_binding" {
 }
 
 
+resource "google_project_iam_member" "sa_action_runner" {
+	project = "vetai1994"
+	role    = "roles/artifactregistry.writer"
+	member  = "serviceAccount:${google_service_account.service_account.email}"
+	
+}
+
+
+
 ################################################################################
 # GitHub Workload Identity Federation
 ################################################################################
@@ -82,3 +90,5 @@ output "gh_oidc_pool_name" {
 output "gh_oidc_provider_name" {
 	value = module.gh_oidc.provider_name
 }
+
+

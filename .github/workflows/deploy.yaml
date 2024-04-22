@@ -43,8 +43,8 @@ jobs:
         gcloud auth configure-docker 
         docker buildx build --platform linux/amd64 -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/pythonserver:latest --push .
 ##
-#    - name: Deploy to Google Cloud Run
-#      run: |
-#        gcloud run deploy pythonserver --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/pythonserver:latest --platform managed --region europe-west2 --allow-unauthenticated
-#
+    - name: Deploy to Google Cloud Run
+      run: |
+        gcloud run deploy pythonserver --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/pythonserver:latest --platform managed --region europe-west2 --allow-unauthenticated
+
  

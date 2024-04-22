@@ -36,10 +36,18 @@ resource "google_project_service" "project_services" {
 # Service accounts
 ################################################################################
 
+
 resource "google_service_account" "service_account" {
 	project      = "vetai1994"
 	account_id   = "github-actions-service-account"
 	display_name = "Github Actions Service Account"
+}
+
+resource "google_project_iam_binding" "service_account_iam_binding" {
+	provider = google-beta
+	project  = "vetai1994"
+	role     = "roles/iam.serviceAccountTokenCreator"
+	members  = ["serviceAccount:${google_service_account.service_account.email}"]
 }
 
 

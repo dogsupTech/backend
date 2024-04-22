@@ -16,14 +16,16 @@ provider "google-beta" {
 
 locals {
 	api_services = {
-		"iam" = "iam.googleapis.com",
+		"iam"                  = "iam.googleapis.com",
 		"cloudresourcemanager" = "cloudresourcemanager.googleapis.com",
-		"iamcredentials" = "iamcredentials.googleapis.com",
-		"sts" = "sts.googleapis.com",
+		"iamcredentials"       = "iamcredentials.googleapis.com",
+		"sts"                  = "sts.googleapis.com",
+		"artifact"             = "artifactregistry.googleapis.com",
 	}
 	bindings = {
 		"roles/iam.serviceAccountTokenCreator" = "serviceAccount:${google_service_account.service_account.email}"
-		"roles/iam.workloadIdentityUser"           = "serviceAccount:${google_service_account.service_account.email}"
+		"roles/iam.workloadIdentityUser"       = "serviceAccount:${google_service_account.service_account.email}"
+		"roles/artifactregistry.writer"        = "serviceAccount:${google_service_account.service_account.email}"
 	}
 }
 
@@ -60,9 +62,8 @@ resource "google_project_iam_member" "sa_action_runner" {
 	project = "vetai1994"
 	role    = "roles/artifactregistry.writer"
 	member  = "serviceAccount:${google_service_account.service_account.email}"
-	
-}
 
+}
 
 
 ################################################################################

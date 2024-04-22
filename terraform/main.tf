@@ -24,6 +24,7 @@ locals {
 	}
 	bindings = {
 		"roles/iam.serviceAccountTokenCreator" = "serviceAccount:${google_service_account.service_account.email}"
+		"roles/iam.serviceAccountUser" = "serviceAccount:${google_service_account.service_account.email}"
 		"roles/iam.workloadIdentityUser"       = "serviceAccount:${google_service_account.service_account.email}"
 		"roles/artifactregistry.writer"        = "serviceAccount:${google_service_account.service_account.email}"
 	}

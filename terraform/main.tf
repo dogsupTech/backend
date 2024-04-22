@@ -21,6 +21,11 @@ locals {
 		"iamcredentials" = "iamcredentials.googleapis.com",
 		"sts" = "sts.googleapis.com",
 	}
+	bindings = {
+		"roles/iam.serviceAccountTokenCreator" = "serviceAccount:${google_service_account.service_account.email}"
+		"roles/iam.workloadIdentityUser"           = "serviceAccount:${google_service_account.service_account.email}"
+
+	}
 }
 
 resource "google_project_service" "project_services" {
@@ -44,12 +49,12 @@ resource "google_service_account" "service_account" {
 }
 
 resource "google_project_iam_binding" "service_account_iam_binding" {
+	for_each = local.bindings
 	provider = google-beta
 	project  = "vetai1994"
-	role     = "roles/iam.serviceAccountTokenCreator"
-	members  = ["serviceAccount:${google_service_account.service_account.email}"]
+	role     = each.key
+	members  = [each.value]
 }
-
 
 
 ################################################################################

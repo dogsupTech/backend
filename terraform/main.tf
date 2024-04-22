@@ -78,7 +78,7 @@ module "gh_oidc" {
 	sa_mapping  = {
 		"gh-service-account" = {
 			sa_name   = google_service_account.service_account.name
-			attribute = "attribute.repository/dogg3/dogsupTech"
+			attribute = "attribute.repository/dogg3/dogsupTech/backend"
 		}
 	}
 }

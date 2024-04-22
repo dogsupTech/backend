@@ -23,10 +23,10 @@ locals {
 		"artifact"             = "artifactregistry.googleapis.com",
 	}
 	bindings = {
-		"roles/iam.serviceAccountTokenCreator"     = "serviceAccount:${google_service_account.service_account.email}"
-		"roles/iam.serviceAccountUser"             = "serviceAccount:${google_service_account.service_account.email}"
-		"roles/artifactregistry.writer"            = "serviceAccount:${google_service_account.service_account.email}"
-		"roles/editor"            = "serviceAccount:${google_service_account.service_account.email}"
+		"roles/iam.serviceAccountTokenCreator" = "serviceAccount:${google_service_account.service_account.email}"
+		"roles/iam.serviceAccountUser"         = "serviceAccount:${google_service_account.service_account.email}"
+		"roles/artifactregistry.writer"        = "serviceAccount:${google_service_account.service_account.email}"
+		"roles/editor"                         = "serviceAccount:${google_service_account.service_account.email}"
 	}
 }
 
@@ -78,7 +78,7 @@ module "gh_oidc" {
 	sa_mapping  = {
 		"gh-service-account" = {
 			sa_name   = google_service_account.service_account.name
-			attribute = "attribute.repository/dogg3/dogsupTech/backend"
+			attribute = "attribute.repository/dogsupTech/backend"
 		}
 	}
 }

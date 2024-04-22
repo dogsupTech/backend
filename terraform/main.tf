@@ -23,9 +23,10 @@ locals {
 		"artifact"             = "artifactregistry.googleapis.com",
 	}
 	bindings = {
-		"roles/iam.serviceAccountTokenCreator" = "serviceAccount:${google_service_account.service_account.email}"
-		"roles/iam.serviceAccountUser"         = "serviceAccount:${google_service_account.service_account.email}"
-		"roles/artifactregistry.writer"        = "serviceAccount:${google_service_account.service_account.email}"
+		"roles/iam.serviceAccountTokenCreator"     = "serviceAccount:${google_service_account.service_account.email}"
+		"roles/iam.serviceAccountUser"             = "serviceAccount:${google_service_account.service_account.email}"
+		"roles/iam.serviceAccountGetAccessToken" = "serviceAccount:${google_service_account.service_account.email}"
+		"roles/artifactregistry.writer"            = "serviceAccount:${google_service_account.service_account.email}"
 	}
 }
 
@@ -56,7 +57,6 @@ resource "google_project_iam_binding" "service_account_iam_binding" {
 	role     = each.key
 	members  = [each.value]
 }
-
 
 resource "google_project_iam_member" "sa_action_runner" {
 	project = "vetai1994"

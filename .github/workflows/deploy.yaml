@@ -6,7 +6,7 @@ on:
     - main  # Adjust this as necessary for your project
       
 env:
-  REGISTRY: europe-west1-docker.pkg.dev
+  REGISTRY: europe-west2-docker.pkg.dev
 
 jobs:
   build-and-deploy:

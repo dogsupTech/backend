@@ -65,7 +65,8 @@ resource "google_service_account_iam_binding" "wif_sa_binding" {
 	role               = "roles/iam.workloadIdentityUser"
 
 	members = [
-		"principalSet://iam.googleapis.com/${module.gh_oidc.pool_name}/attribute.repository/dogsupTech/backend"
+		"principalSet://iam.googleapis.com/${module.gh_oidc.pool_name}/attribute.repository/dogsupTech/backend",
+		"principalSet://iam.googleapis.com/${module.gh_oidc.pool_name}/attribute.repository/dogsupTech/frontend"
 	]
 }
 
@@ -93,6 +94,7 @@ module "gh_oidc" {
 		"gh-service-account" = {
 			sa_name   = google_service_account.gh_actions_sa.name
 			attribute = "attribute.repository/dogsupTech/backend"
+			attribute = "attribute.repository/dogsupTech/frontend"
 		}
 	}
 }

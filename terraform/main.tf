@@ -25,8 +25,7 @@ locals {
 	bindings = {
 		"roles/iam.serviceAccountTokenCreator" = "serviceAccount:${google_service_account.gh_actions_sa.email}"
 		"roles/iam.serviceAccountUser"         = "serviceAccount:${google_service_account.gh_actions_sa.email}"
-#		"roles/artifactregistry.writer"        = "serviceAccount:${google_service_account.gh_actions_sa.email}"
-#		"roles/editor"                         = "serviceAccount:${google_service_account.service_account.email}"
+		"roles/artifactregistry.writer"        = "serviceAccount:${google_service_account.gh_actions_sa.email}"
 	}
 }
 
@@ -58,6 +57,15 @@ resource "google_project_iam_binding" "service_account_iam_binding" {
 	members  = [each.value]
 }
 
+// Allow the workload identity pool to impersonate the service account
+resource "google_service_account_iam_binding" "wif_sa_binding" {
+	service_account_id = google_service_account.gh_actions_sa.name
+	role               = "roles/iam.workloadIdentityUser"
+
+	members = [
+		"principalSet://iam.googleapis.com/${module.gh_oidc.pool_name}/attribute.repository/dogsupTech/backend"
+	]
+}
 
 ################################################################################
 # Artifact registry
@@ -86,6 +94,8 @@ module "gh_oidc" {
 		}
 	}
 }
+
+
 
 
 output "gh_oidc_pool_name" {

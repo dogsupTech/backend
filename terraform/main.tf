@@ -23,9 +23,9 @@ locals {
 		"artifact"             = "artifactregistry.googleapis.com",
 	}
 	bindings = {
-		"roles/iam.serviceAccountTokenCreator" = "serviceAccount:${google_service_account.service_account.email}"
-		"roles/iam.serviceAccountUser"         = "serviceAccount:${google_service_account.service_account.email}"
-		"roles/artifactregistry.writer"        = "serviceAccount:${google_service_account.service_account.email}"
+		"roles/iam.serviceAccountTokenCreator" = "serviceAccount:${google_service_account.gh_actions_sa.email}"
+		"roles/iam.serviceAccountUser"         = "serviceAccount:${google_service_account.gh_actions_sa.email}"
+		"roles/artifactregistry.writer"        = "serviceAccount:${google_service_account.gh_actions_sa.email}"
 #		"roles/editor"                         = "serviceAccount:${google_service_account.service_account.email}"
 	}
 }
@@ -44,7 +44,7 @@ resource "google_project_service" "project_services" {
 ################################################################################
 
 
-resource "google_service_account" "service_account" {
+resource "google_service_account" "gh_actions_sa" {
 	project      = "vetai1994"
 	account_id   = "github-actions-service-account"
 	display_name = "Github Actions Service Account"
@@ -61,10 +61,20 @@ resource "google_project_iam_binding" "service_account_iam_binding" {
 resource "google_project_iam_member" "sa_action_runner" {
 	project = "vetai1994"
 	role    = "roles/artifactregistry.writer"
-	member  = "serviceAccount:${google_service_account.service_account.email}"
+	member  = "serviceAccount:${google_service_account.gh_actions_sa.email}"
 
 }
 
+################################################################################
+# Artifact registry
+################################################################################
+
+resource "google_artifact_registry_repository" "my-repo" {
+	location      = "europe-west2"
+	repository_id = "docker-repository"
+	description   = "docker repository"
+	format        = "DOCKER"
+}
 
 ################################################################################
 # GitHub Workload Identity Federation
@@ -77,7 +87,7 @@ module "gh_oidc" {
 	provider_id = "gh-provider"
 	sa_mapping  = {
 		"gh-service-account" = {
-			sa_name   = google_service_account.service_account.name
+			sa_name   = google_service_account.gh_actions_sa.name
 			attribute = "attribute.repository/dogsupTech/backend"
 			attribute = "attribute.repository/dogsupTech/frontend"
 		}
@@ -92,5 +102,4 @@ output "gh_oidc_pool_name" {
 output "gh_oidc_provider_name" {
 	value = module.gh_oidc.provider_name
 }
-
 

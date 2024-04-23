@@ -46,6 +46,7 @@ jobs:
         # Build and push Docker image with the commit SHA as a tag for version tracking.
 
     - name: Deploy to Google Cloud Run
-      run: >
+      run: |
         gcloud auth configure-docker ${{ env.REGISTRY }}
-        gcloud run deploy pythonserver --image  europe-west2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/docker-repository/pythonserver:${{ github.sha }} --platform managed --region europe-west2 --allow-unauthenticated
+        gcloud run deploy pythonserver --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} --platform managed --region europe-west2 --allow-unauthenticated
+        # Deploy the Docker image to Google Cloud Run

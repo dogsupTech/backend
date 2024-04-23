@@ -27,6 +27,7 @@ locals {
 		"roles/iam.serviceAccountUser"         = "serviceAccount:${google_service_account.gh_actions_sa.email}"
 		"roles/artifactregistry.writer"        = "serviceAccount:${google_service_account.gh_actions_sa.email}"
 		"roles/artifactregistry.reader"        = "serviceAccount:${google_service_account.gh_actions_sa.email}"
+		"roles/run.invoker"                    = "serviceAccount:${google_service_account.gh_actions_sa.email}"
 	}
 }
 
@@ -95,8 +96,6 @@ module "gh_oidc" {
 		}
 	}
 }
-
-
 
 
 output "gh_oidc_pool_name" {

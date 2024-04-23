@@ -29,12 +29,6 @@ jobs:
         workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
         service_account: ${{ secrets.GCP_SA_EMAIL }}
         
-#    - name: Login to GCR
-#      uses: docker/login-action@v3
-#      with:
-#        username: oauth2accesstoken
-#        password: ${{ steps.auth.outputs.access_token }}
-#      
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
@@ -42,7 +36,7 @@ jobs:
       run: |
         gcloud auth configure-docker 
         docker buildx build --platform linux/amd64 -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/pythonserver:latest --push .
-##
+        
     - name: Deploy to Google Cloud Run
       run: |
         gcloud run deploy pythonserver --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/pythonserver:latest --platform managed --region europe-west2 --allow-unauthenticated

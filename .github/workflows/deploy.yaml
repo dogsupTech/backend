@@ -48,6 +48,4 @@ jobs:
     - name: Deploy to Google Cloud Run
       run: >
         gcloud auth configure-docker ${{ env.REGISTRY }}
-        gcloud run deploy pythonserver --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-        --platform managed --region europe-west2 --allow-unauthenticated
-        # Deploy the Docker image to Google Cloud Run
+        gcloud run deploy pythonserver --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} --platform managed --region europe-west2 --allow-unauthenticated

@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS, cross_origin
 import os
 import logging
 
@@ -12,6 +13,8 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain.output_parsers import RegexParser
 
 app = Flask(__name__)
+CORS(
+    app)  # This enables CORS for all domains on all routes. For more granularity, use the @cross_origin decorator or configure CORS more tightly.
 
 os.environ['OPENAI_API_KEY'] = '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'
 
@@ -90,6 +93,7 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %
 
 
 @app.route('/docqna', methods=["POST"])
+@cross_origin()  # Allows CORS specifically for this route
 def process_claim():
     try:
         input_json = request.get_json(force=True)
@@ -105,6 +109,7 @@ def process_claim():
 
 
 @app.route('/hello')
+@cross_origin()  # Allows CORS specifically for this route
 def hello():
     return jsonify({"message": "Hello World!"})
 

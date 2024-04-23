@@ -26,6 +26,7 @@ locals {
 		"roles/iam.serviceAccountTokenCreator" = "serviceAccount:${google_service_account.gh_actions_sa.email}"
 		"roles/iam.serviceAccountUser"         = "serviceAccount:${google_service_account.gh_actions_sa.email}"
 		"roles/artifactregistry.writer"        = "serviceAccount:${google_service_account.gh_actions_sa.email}"
+		"roles/artifactregistry.reader"        = "serviceAccount:${google_service_account.gh_actions_sa.email}"
 	}
 }
 

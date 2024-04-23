@@ -96,6 +96,7 @@ module "gh_oidc" {
 			sa_name   = google_service_account.gh_actions_sa.name
 			attribute = "attribute.repository/dogsupTech/backend"
 			attribute = "attribute.repository/dogsupTech/frontend"
+			attribute = "attribute.repository/dogsupTech/account"
 		}
 	}
 }

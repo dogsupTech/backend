@@ -104,6 +104,11 @@ def process_claim():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route('/hello')
+def hello():
+    return jsonify({"message": "Hello World!"})
+
+
 def getanswer(query):
     try:
         relevant_chunks = embeddings.similarity_search_with_score(query, k=2)
@@ -124,21 +129,3 @@ def getanswer(query):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))  # Default to 8080 if no PORT env var is set
     app.run(host='0.0.0.0', port=port, debug=False)
-
-
-import os
-
-from flask import Flask
-
-app = Flask(__name__)
-
-
-@app.route("/")
-def hello_world():
-    """Example Hello World route."""
-    name = os.environ.get("NAME", "World")
-    return f"Hello {name}!"
-
-
-if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))

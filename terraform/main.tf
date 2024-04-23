@@ -25,7 +25,7 @@ locals {
 	bindings = {
 		"roles/iam.serviceAccountTokenCreator" = "serviceAccount:${google_service_account.gh_actions_sa.email}"
 		"roles/iam.serviceAccountUser"         = "serviceAccount:${google_service_account.gh_actions_sa.email}"
-		"roles/artifactregistry.writer"        = "serviceAccount:${google_service_account.gh_actions_sa.email}"
+#		"roles/artifactregistry.writer"        = "serviceAccount:${google_service_account.gh_actions_sa.email}"
 #		"roles/editor"                         = "serviceAccount:${google_service_account.service_account.email}"
 	}
 }
@@ -58,12 +58,6 @@ resource "google_project_iam_binding" "service_account_iam_binding" {
 	members  = [each.value]
 }
 
-resource "google_project_iam_member" "sa_action_runner" {
-	project = "vetai1994"
-	role    = "roles/artifactregistry.writer"
-	member  = "serviceAccount:${google_service_account.gh_actions_sa.email}"
-
-}
 
 ################################################################################
 # Artifact registry
@@ -89,7 +83,6 @@ module "gh_oidc" {
 		"gh-service-account" = {
 			sa_name   = google_service_account.gh_actions_sa.name
 			attribute = "attribute.repository/dogsupTech/backend"
-			attribute = "attribute.repository/dogsupTech/frontend"
 		}
 	}
 }

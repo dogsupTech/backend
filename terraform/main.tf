@@ -27,7 +27,7 @@ locals {
 		"roles/iam.serviceAccountUser"         = "serviceAccount:${google_service_account.gh_actions_sa.email}"
 		"roles/artifactregistry.writer"        = "serviceAccount:${google_service_account.gh_actions_sa.email}"
 		"roles/artifactregistry.reader"        = "serviceAccount:${google_service_account.gh_actions_sa.email}"
-		"roles/run.admin"                    = "serviceAccount:${google_service_account.gh_actions_sa.email}"
+		"roles/run.admin"                      = "serviceAccount:${google_service_account.gh_actions_sa.email}"
 	}
 }
 
@@ -66,7 +66,8 @@ resource "google_service_account_iam_binding" "wif_sa_binding" {
 
 	members = [
 		"principalSet://iam.googleapis.com/${module.gh_oidc.pool_name}/attribute.repository/dogsupTech/backend",
-		"principalSet://iam.googleapis.com/${module.gh_oidc.pool_name}/attribute.repository/dogsupTech/frontend"
+		"principalSet://iam.googleapis.com/${module.gh_oidc.pool_name}/attribute.repository/dogsupTech/frontend",
+		"principalSet://iam.googleapis.com/${module.gh_oidc.pool_name}/attribute.repository/dogsupTech/account"
 	]
 }
 

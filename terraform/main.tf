@@ -21,6 +21,9 @@ locals {
 		"iamcredentials"       = "iamcredentials.googleapis.com",
 		"sts"                  = "sts.googleapis.com",
 		"artifact"             = "artifactregistry.googleapis.com",
+		"apitgateway"          = "apigateway.googleapis.com",
+		"servicemanagement"    = "servicemanagement.googleapis.com",
+		"servicecontrol"       = "servicecontrol.googleapis.com",
 	}
 	bindings = {
 		"roles/iam.serviceAccountTokenCreator" = "serviceAccount:${google_service_account.gh_actions_sa.email}"

@@ -67,48 +67,29 @@ class LLM:
             "and behavioral science. Answer questions about dog behavior with practical advice and insights based on your expertise. "
             "The dog's details are as follows: - Name: {dog_name} - Birth Date: {dog_birth_date} - Age: {dog_age} - Breed: {dog_breed} "
             "- Sex: {dog_sex}. Please make the answer personalized for {dog_name}."
-            "The answer should not be too long, and if so divide into paragraphs."
-            "If the question is not about dog behavior or you don't know the answer, please say so."
+            "If the question is not about dog behavior or you don't know the answer, say so."
         )
 
-        # Log the raw system template
-        logging.info("System template: %s", system_template)
-
-        chat_message_prompt = ChatPromptTemplate.from_messages([
-            ("system", system_template),
-        ])
-
-        # Format the system message with dog details and the question
-        system_message = chat_message_prompt.format_messages(
-            dog_name=dog.name,
-            dog_birth_date=dog.birth_date.strftime('%Y-%m-%d'),
-            dog_age=dog.age,
-            dog_breed=dog.breed,
-            dog_sex=dog.sex,
-            question=question
-        )
-
-        # Log the formatted system message
-        logging.info("Formatted system message: %s", system_message)
-
-        final_prompt = ChatPromptTemplate.from_messages(
+        prompt = ChatPromptTemplate.from_messages(
             [
-                system_message[0],
+                ("system", system_template),
                 MessagesPlaceholder(variable_name="messages"),
             ]
         )
 
-        # Log the final prompt
-        logging.info("Final prompt: %s", final_prompt)
-
-        # Define the chain combining the final prompt with the chat model
-        chain = final_prompt | self.chat_model
+        chain = prompt | self.chat_model
 
         # Log the state of the chain
         logging.info("Chain: %s", chain)
 
         # Start streaming the response
         response_stream = chain.stream({
+            "dog_name": dog.name,
+            "dog_birth_date": dog.birth_date.strftime('%Y-%m-%d'),
+            "dog_age": dog.age,
+            "dog_breed": dog.breed,
+            "dog_sex": dog.sex,
+            "question": question,
             "messages": [
                 HumanMessage(
                     content=question,

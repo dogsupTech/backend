@@ -67,6 +67,7 @@ class LLM:
             "and behavioral science. Answer questions about dog behavior with practical advice and insights based on your expertise. "
             "The dog's details are as follows: - Name: {dog_name} - Birth Date: {dog_birth_date} - Age: {dog_age} - Breed: {dog_breed} "
             "- Sex: {dog_sex}. Please make the answer personalized for {dog_name}."
+            "The answer should not be too long, and if so divide into paragraphs."
             "If the question is not about dog behavior or you don't know the answer, please say so."
         )
 

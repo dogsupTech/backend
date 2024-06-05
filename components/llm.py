@@ -19,17 +19,22 @@ os.environ['OPENAI_API_KEY'] = 'sk-n5jsLcvIGD5IY3UBGSIFT3BlbkFJuriQy7RoOwx3KXL5a
 
 
 class Dog:
-    def __init__(self, name: str, birth_date: str, breed: str, sex: str):
-        self.name: str = name
-        self.birth_date: datetime.date = datetime.datetime.strptime(birth_date, '%Y-%m-%d').date()
-        self.age: int = datetime.datetime.now().year - self.birth_date.year
-        self.breed: str = breed
-        self.sex: str = sex
+    def __init__(self, name: str, sex: str, breed: str, birth_date: str):
+        self.name = name
+        self.sex = sex
+        self.breed = breed
+        self.birth_date = datetime.datetime.strptime(birth_date, '%Y-%m-%dT%H:%M:%S.%fZ')
+
+    @property
+    def age(self) -> int:
+        today = datetime.date.today()
+        age = today.year - self.birth_date.year - ((today.month, today.day) < (self.birth_date.month, self.birth_date.day))
+        return age
 
     def __repr__(self):
-        return f"Dog(name={self.name}, birth_date={self.birth_date}, breed={self.breed}, sex={self.sex}), age={self.age}"
-
-
+        return f"Dog(name={self.name}, sex={self.sex}, breed={self.breed}, birth_date={self.birth_date}, age={self.age})"
+    
+    
 class LLM:
     def __init__(self, model_name: str, api_key: str):
         self.model_name = model_name

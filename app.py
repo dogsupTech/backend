@@ -28,11 +28,13 @@ console_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(
 logging.getLogger().addHandler(console_handler)
 
 
+
 @app.route('/chat', methods=['POST'])
 def chat_endpoint():
     data = request.json
     user_input = data.get("input")
     dog_details = data.get("dog")
+
     # Log the incoming request
     logging.info("Received request: %s", data)
 
@@ -44,11 +46,18 @@ def chat_endpoint():
 
     # Validate and process dog details
     try:
-        new_dog = Dog(**dog_details)
+        # Correctly map dog details to Dog class attributes
+        new_dog = Dog(
+            name=dog_details.get('dogName'),
+            sex=dog_details.get('sex'),
+            breed=dog_details.get('selectedBreed'),
+            birth_date=dog_details.get('birthDate')
+        )
         logging.info("Created new dog: %s", vars(new_dog))
     except Exception as e:
         logging.error("Error creating dog: %s", str(e))
         return jsonify({"error": str(e)}), 400
+
 
     # Process user input
     chat_response = llm.stream_openai_chat(new_dog, user_input)
@@ -58,7 +67,7 @@ def chat_endpoint():
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))  # Default to 8080 if no PORT env var is set
+    port = int(os.environ.get("PORT", 8081))  # Default to 8080 if no PORT env var is set
     app.run(host='0.0.0.0', port=port, debug=True)
 
 # @app.route('/docqna', methods=["POST"])

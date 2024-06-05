@@ -51,7 +51,7 @@ def chat_endpoint():
         return jsonify({"error": str(e)}), 400
 
     # Process user input
-    chat_response = llm.stream_openai_chat(user_input)
+    chat_response = llm.stream_openai_chat(new_dog, user_input)
 
     # Return the chat response as a text event stream
     return Response(chat_response, content_type='text/event-stream')

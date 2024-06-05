@@ -3,38 +3,27 @@ from langchain_openai import ChatOpenAI
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS, cross_origin
 import os
-import logging
+
+from components.llm import LLM
 
 app = Flask(__name__)
 CORS(app)
 
-# Set OpenAI API Key
-openapikey = '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'
-os.environ['OPENAI_API_KEY'] = openapikey
+os.environ['OPENAI_API_KEY'] = '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'
 
-# Initialize ChatOpenAI
-chat = ChatOpenAI(model="gpt-3.5-turbo-0125", api_key=openapikey)
-
-
-def stream_openai_chat(prompt):
-    message = [("system", "you are a helpful assistant"), ("human", prompt)]
-    response_stream = chat.stream(message)
-
-    for chunk in response_stream:
-        if chunk.content:
-            yield f"{chunk.content}"
+llm = LLM(model_name="gpt-3.5-turbo", api_key=os.environ['OPENAI_API_KEY'])
 
 
 @app.route('/chat', methods=['POST'])
 def chat_endpoint():
     user_input = request.json.get("input")
-    return Response(stream_openai_chat(user_input), content_type='text/event-stream')
+    return Response(llm.stream_openai_chat(user_input), content_type='text/event-stream')
 
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))  # Default to 8080 if no PORT env var is set
     app.run(host='0.0.0.0', port=port, debug=True)
-    
+
 # @app.route('/docqna', methods=["POST"])
 # def process_claim():
 #     try:
@@ -63,4 +52,3 @@ if __name__ == "__main__":
 #     except Exception as e:
 #         logging.error("Failed to parse output: %s", str(e))
 #         return {"error": f"Could not parse output: {e}"}
-

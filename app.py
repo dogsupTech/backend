@@ -3,8 +3,9 @@ from langchain_openai import ChatOpenAI
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS, cross_origin
 import os
+import logging
 
-from components.llm import LLM
+from components.llm import LLM, Dog
 
 app = Flask(__name__)
 CORS(app)
@@ -14,10 +15,46 @@ os.environ['OPENAI_API_KEY'] = 'sk-n5jsLcvIGD5IY3UBGSIFT3BlbkFJuriQy7RoOwx3KXL5a
 llm = LLM(model_name="gpt-3.5-turbo", api_key=os.environ['OPENAI_API_KEY'])
 
 
+# Configure logging to output to console
+logging.basicConfig(
+    level=logging.INFO,  # Log level
+    format='%(asctime)s - %(levelname)s - %(message)s'  # Log message format
+)
+
+# Add a StreamHandler to the root logger to log to console
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)  # Set the log level for console output
+console_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+logging.getLogger().addHandler(console_handler)
+
+
 @app.route('/chat', methods=['POST'])
 def chat_endpoint():
-    user_input = request.json.get("input")
-    return Response(llm.stream_openai_chat(user_input), content_type='text/event-stream')
+    data = request.json
+    user_input = data.get("input")
+    dog_details = data.get("dog")
+    # Log the incoming request
+    logging.info("Received request: %s", data)
+
+    # Check if the request contains both user input and dog details
+    if user_input is None:
+        return jsonify({"error": "Input is missing"}), 400
+    if dog_details is None:
+        return jsonify({"error": "Dog details are missing"}), 400
+
+    # Validate and process dog details
+    try:
+        new_dog = Dog(**dog_details)
+        logging.info("Created new dog: %s", vars(new_dog))
+    except Exception as e:
+        logging.error("Error creating dog: %s", str(e))
+        return jsonify({"error": str(e)}), 400
+
+    # Process user input
+    chat_response = llm.stream_openai_chat(user_input)
+
+    # Return the chat response as a text event stream
+    return Response(chat_response, content_type='text/event-stream')
 
 
 if __name__ == "__main__":

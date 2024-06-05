@@ -1,0 +1,21 @@
+2024-06-05 13:24:30,555 - WARNING -  * Debugger is active!
+2024-06-05 13:24:30,561 - INFO -  * Debugger PIN: 716-217-886
+2024-06-05 13:37:02,910 - INFO -  * Detected change in '/Users/dlan/important/dogsup/techdogsup/backend/app.py', reloading
+2024-06-05 13:37:03,881 - WARNING -  * Debugger is active!
+2024-06-05 13:37:03,889 - INFO -  * Debugger PIN: 716-217-886
+2024-06-05 13:38:07,589 - INFO - 127.0.0.1 - - [05/Jun/2024 13:38:07] "[31m[1mPOST /chat HTTP/1.1[0m" 400 -
+2024-06-05 13:38:47,016 - INFO - 127.0.0.1 - - [05/Jun/2024 13:38:47] "[31m[1mPOST /chat HTTP/1.1[0m" 400 -
+2024-06-05 13:38:53,112 - INFO - Created new dog: {'name': 'Buddy', 'birth_date': '2020-01-01', 'breed': 'Labrador', 'sex': 'Male'}
+2024-06-05 13:38:53,981 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2024-06-05 13:38:53,994 - INFO - 127.0.0.1 - - [05/Jun/2024 13:38:53] "POST /chat HTTP/1.1" 200 -
+2024-06-05 13:40:08,559 - INFO -  * Detected change in '/Users/dlan/important/dogsup/techdogsup/backend/components/llm.py', reloading
+2024-06-05 13:40:09,363 - WARNING -  * Debugger is active!
+2024-06-05 13:40:09,370 - INFO -  * Debugger PIN: 716-217-886
+2024-06-05 13:40:33,056 - INFO -  * Detected change in '/Users/dlan/important/dogsup/techdogsup/backend/app.py', reloading
+2024-06-05 13:40:33,822 - WARNING -  * Debugger is active!
+2024-06-05 13:40:33,829 - INFO -  * Debugger PIN: 716-217-886
+2024-06-05 13:40:37,118 - INFO - Received request: {'input': 'Hello, how are you?', 'dog': {'name': 'Buddy', 'birth_date': '2020-01-01', 'breed': 'Labrador', 'sex': 'Male'}}
+2024-06-05 13:40:37,118 - INFO - Created new dog: {'name': 'Buddy', 'birth_date': '2020-01-01', 'breed': 'Labrador', 'sex': 'Male'}
+2024-06-05 13:40:37,950 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2024-06-05 13:40:37,964 - INFO - 127.0.0.1 - - [05/Jun/2024 13:40:37] "POST /chat HTTP/1.1" 200 -
+2024-06-05 13:42:32,381 - INFO -  * Detected change in '/Users/dlan/important/dogsup/techdogsup/backend/components/llm.py', reloading

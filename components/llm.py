@@ -1,3 +1,4 @@
+import datetime
 import logging
 import os
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
@@ -7,8 +8,8 @@ from langchain_core.prompts import PromptTemplate
 from langchain.chains.question_answering import load_qa_chain
 from langchain.output_parsers import RegexParser
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from flask import Flask, request, jsonify, Response
-from flask_cors import CORS, cross_origin
+from flask import Flask 
+from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
@@ -17,8 +18,20 @@ CORS(app)
 os.environ['OPENAI_API_KEY'] = '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'
 
 
+class Dog:
+    def __init__(self, name: str, birth_date: str, breed: str, sex: str):
+        self.name: str = name
+        self.birth_date: datetime.date = datetime.datetime.strptime(birth_date, '%Y-%m-%d').date()
+        self.age: int = datetime.datetime.now().year - self.birth_date.year
+        self.breed: str = breed
+        self.sex: str = sex
+
+    def __repr__(self):
+        return f"Dog(name={self.name}, birth_date={self.birth_date}, breed={self.breed}, sex={self.sex}), age={self.age}"
+    
+    
 class LLM:
-    def __init__(self, model_name, api_key):
+    def __init__(self, model_name: str, api_key: str):
         self.model_name = model_name
         self.api_key = api_key
         self.chat_model = ChatOpenAI(model=self.model_name, api_key=self.api_key)

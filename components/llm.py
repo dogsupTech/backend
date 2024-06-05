@@ -62,12 +62,13 @@ class LLM:
         self.embeddings = None
 
     def stream_openai_chat(self, dog: Dog, question: str):
+
         system_template = (
             "You are an expert in dog behavior with a deep understanding of canine psychology, training techniques, "
             "and behavioral science. Answer questions about dog behavior with practical advice and insights based on your expertise. "
             "The dog's details are as follows: - Name: {dog_name} - Birth Date: {dog_birth_date} - Age: {dog_age} - Breed: {dog_breed} "
             "- Sex: {dog_sex}. Please make the answer personalized for {dog_name}."
-            "If the question is not about dog behavior or you don't know the answer, say so."
+            "If the question is not about dog behavior or you don't know the answer, say so. Use three sentences maximum and keep the answer concise."
         )
 
         prompt = ChatPromptTemplate.from_messages(
@@ -82,6 +83,9 @@ class LLM:
         # Log the state of the chain
         logging.info("Chain: %s", chain)
 
+        # Add the user message to the chat history
+        demo_ephemeral_chat_history.add_user_message(question)
+
         # Start streaming the response
         response_stream = chain.stream({
             "dog_name": dog.name,
@@ -90,17 +94,18 @@ class LLM:
             "dog_breed": dog.breed,
             "dog_sex": dog.sex,
             "question": question,
-            "messages": [
-                HumanMessage(
-                    content=question,
-                ),
-            ],
+            "messages": demo_ephemeral_chat_history.messages,
         })
 
+
         # Log the response chunks as they are received
+        response = ""
         for chunk in response_stream:
             if chunk.content:
+                response += chunk.content
                 yield f"{chunk.content}"
+                
+        demo_ephemeral_chat_history.add_ai_message(response)
 
     def create_or_load_facial_expression_embeddings(self):
         if self.embeddings is None:

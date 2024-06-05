@@ -15,16 +15,20 @@ os.environ['OPENAI_API_KEY'] = 'sk-n5jsLcvIGD5IY3UBGSIFT3BlbkFJuriQy7RoOwx3KXL5a
 llm = LLM(model_name="gpt-3.5-turbo", api_key=os.environ['OPENAI_API_KEY'])
 
 
-# Configure logging to output to console
-logging.basicConfig(
-    level=logging.INFO,  # Log level
-    format='%(asctime)s - %(levelname)s - %(message)s'  # Log message format
-)
+# Define a custom logging format
+log_format = "%(asctime)s - %(levelname)s - %(message)s"
+logging.basicConfig(level=logging.INFO, format=log_format)
+
+# Add a file handler to the root logger
+file_handler = logging.FileHandler('app.log')
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(logging.Formatter(log_format))
+logging.getLogger().addHandler(file_handler)
 
 # Add a StreamHandler to the root logger to log to console
 console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.INFO)  # Set the log level for console output
-console_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+console_handler.setLevel(logging.INFO)
+console_handler.setFormatter(logging.Formatter(log_format))
 logging.getLogger().addHandler(console_handler)
 
 

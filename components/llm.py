@@ -23,7 +23,6 @@ os.environ['OPENAI_API_KEY'] = 'sk-n5jsLcvIGD5IY3UBGSIFT3BlbkFJuriQy7RoOwx3KXL5a
 
 demo_ephemeral_chat_history = ChatMessageHistory()
 
-
 # Configure logging to output to console
 logging.basicConfig(
     level=logging.INFO,  # Log level
@@ -35,7 +34,6 @@ console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.INFO)  # Set the log level for console output
 console_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 logging.getLogger().addHandler(console_handler)
-
 
 
 class Dog:
@@ -68,10 +66,8 @@ class LLM:
             "You are an expert in dog behavior with a deep understanding of canine psychology, training techniques, "
             "and behavioral science. Answer questions about dog behavior with practical advice and insights based on your expertise. "
             "The dog's details are as follows: - Name: {dog_name} - Birth Date: {dog_birth_date} - Age: {dog_age} - Breed: {dog_breed} "
-            "- Sex: {dog_sex}. Please make the answer personalized for {dog_name}. "
-            "Format the response with and 'advice' and 'references' field and make sure to reflect on how the breed, "
-            "age and sex could affect the behavior. If the beahviour has nothing to do with these features, mention that."
-            "If the question is not about dog behavior, mention that you are a dog behavior expert."
+            "- Sex: {dog_sex}. Please make the answer personalized for {dog_name}."
+            "If the question is not about dog behavior or you don't know the answer, please say so."
         )
 
         # Log the raw system template

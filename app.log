@@ -672,3 +672,75 @@
 2024-06-06 12:01:32,912 - INFO - Chain: first=ChatPromptTemplate(input_variables=['dog_age', 'dog_birth_date', 'dog_breed', 'dog_name', 'dog_sex', 'messages'], input_types={'messages': typing.List[typing.Union[langchain_core.messages.ai.AIMessage, langchain_core.messages.human.HumanMessage, langchain_core.messages.chat.ChatMessage, langchain_core.messages.system.SystemMessage, langchain_core.messages.function.FunctionMessage, langchain_core.messages.tool.ToolMessage]]}, messages=[SystemMessagePromptTemplate(prompt=PromptTemplate(input_variables=['dog_age', 'dog_birth_date', 'dog_breed', 'dog_name', 'dog_sex'], template="You are an expert in dog behavior with a deep understanding of canine psychology, training techniques, and behavioral science. Answer questions about dog behavior with practical advice and insights based on your expertise. The dog's details are as follows: - Name: {dog_name} - Birth Date: {dog_birth_date} - Age: {dog_age} - Breed: {dog_breed} - Sex: {dog_sex}. Please make the answer personalized for {dog_name}.If the question is not about dog behavior or you don't know the answer, say so. Use three sentences maximum and keep the answer concise.")), MessagesPlaceholder(variable_name='messages')]) last=ChatOpenAI(client=<openai.resources.chat.completions.Completions object at 0x10cf7fcd0>, async_client=<openai.resources.chat.completions.AsyncCompletions object at 0x10cf92940>, openai_api_key=SecretStr('**********'), openai_proxy='')
 2024-06-06 12:01:33,510 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
 2024-06-06 12:01:33,529 - INFO - 127.0.0.1 - - [06/Jun/2024 12:01:33] "POST /chat HTTP/1.1" 200 -
+2024-06-06 13:58:34,376 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8081
+ * Running on http://192.168.1.11:8081
+2024-06-06 13:58:34,376 - INFO - [33mPress CTRL+C to quit[0m
+2024-06-06 13:58:34,377 - INFO -  * Restarting with stat
+2024-06-06 13:58:35,372 - WARNING -  * Debugger is active!
+2024-06-06 13:58:35,383 - INFO -  * Debugger PIN: 716-217-886
+2024-06-06 13:58:40,347 - INFO - HEJ: <google.cloud.firestore_v1.async_client.AsyncClient object at 0x106498910>
+2024-06-06 13:58:40,348 - INFO - Received request: {'input': 'Do you have any tips on how to get rid of it for me?', 'dog': {'dogName': 'Buddy', 'birthDate': '2017-06-19T22:00:00.000Z', 'selectedBreed': 'Labrador', 'sex': 'Male'}}
+2024-06-06 13:58:40,349 - INFO - Created new dog: {'name': 'Buddy', 'sex': 'Male', 'breed': 'Labrador', 'birth_date': datetime.datetime(2017, 6, 19, 22, 0)}
+2024-06-06 13:58:40,886 - INFO - length of chunks to embed: 88
+2024-06-06 13:58:42,186 - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2024-06-06 13:58:43,782 - INFO - type of embeddings: <class 'list'>
+2024-06-06 13:58:43,782 - INFO - Chain: first=ChatPromptTemplate(input_variables=['dog_age', 'dog_birth_date', 'dog_breed', 'dog_name', 'dog_sex', 'messages'], input_types={'messages': typing.List[typing.Union[langchain_core.messages.ai.AIMessage, langchain_core.messages.human.HumanMessage, langchain_core.messages.chat.ChatMessage, langchain_core.messages.system.SystemMessage, langchain_core.messages.function.FunctionMessage, langchain_core.messages.tool.ToolMessage]]}, messages=[SystemMessagePromptTemplate(prompt=PromptTemplate(input_variables=['dog_age', 'dog_birth_date', 'dog_breed', 'dog_name', 'dog_sex'], template="You are an expert in dog behavior with a deep understanding of canine psychology, training techniques, and behavioral science. Answer questions about dog behavior with practical advice and insights based on your expertise. The dog's details are as follows: - Name: {dog_name} - Birth Date: {dog_birth_date} - Age: {dog_age} - Breed: {dog_breed} - Sex: {dog_sex}. Please make the answer personalized for {dog_name}.If the question is not about dog behavior or you don't know the answer, say so. Use three sentences maximum and keep the answer concise.")), MessagesPlaceholder(variable_name='messages')]) last=ChatOpenAI(client=<openai.resources.chat.completions.Completions object at 0x115f497f0>, async_client=<openai.resources.chat.completions.AsyncCompletions object at 0x115f5c460>, openai_api_key=SecretStr('**********'), openai_proxy='')
+2024-06-06 13:58:44,474 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2024-06-06 13:58:44,489 - INFO - 127.0.0.1 - - [06/Jun/2024 13:58:44] "POST /chat HTTP/1.1" 200 -
+2024-06-06 13:59:38,398 - INFO -  * Detected change in '/Users/dlan/important/dogsup/techdogsup/backend/app.py', reloading
+2024-06-06 13:59:38,611 - INFO -  * Restarting with stat
+2024-06-06 13:59:39,607 - WARNING -  * Debugger is active!
+2024-06-06 13:59:39,616 - INFO -  * Debugger PIN: 716-217-886
+2024-06-06 13:59:53,021 - INFO -  * Detected change in '/Users/dlan/important/dogsup/techdogsup/backend/app.py', reloading
+2024-06-06 13:59:53,203 - INFO -  * Restarting with stat
+2024-06-06 13:59:54,218 - WARNING -  * Debugger is active!
+2024-06-06 13:59:54,225 - INFO -  * Debugger PIN: 716-217-886
+2024-06-06 13:59:54,739 - INFO - HEJ: <async_generator object AsyncClient.collections at 0x11d666f70>
+2024-06-06 13:59:54,739 - INFO - Received request: {'input': 'Do you have any tips on how to get rid of it for me?', 'dog': {'dogName': 'Buddy', 'birthDate': '2017-06-19T22:00:00.000Z', 'selectedBreed': 'Labrador', 'sex': 'Male'}}
+2024-06-06 13:59:54,740 - INFO - Created new dog: {'name': 'Buddy', 'sex': 'Male', 'breed': 'Labrador', 'birth_date': datetime.datetime(2017, 6, 19, 22, 0)}
+2024-06-06 13:59:55,257 - INFO - length of chunks to embed: 88
+2024-06-06 13:59:57,011 - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2024-06-06 13:59:59,910 - INFO - type of embeddings: <class 'list'>
+2024-06-06 13:59:59,910 - INFO - Chain: first=ChatPromptTemplate(input_variables=['dog_age', 'dog_birth_date', 'dog_breed', 'dog_name', 'dog_sex', 'messages'], input_types={'messages': typing.List[typing.Union[langchain_core.messages.ai.AIMessage, langchain_core.messages.human.HumanMessage, langchain_core.messages.chat.ChatMessage, langchain_core.messages.system.SystemMessage, langchain_core.messages.function.FunctionMessage, langchain_core.messages.tool.ToolMessage]]}, messages=[SystemMessagePromptTemplate(prompt=PromptTemplate(input_variables=['dog_age', 'dog_birth_date', 'dog_breed', 'dog_name', 'dog_sex'], template="You are an expert in dog behavior with a deep understanding of canine psychology, training techniques, and behavioral science. Answer questions about dog behavior with practical advice and insights based on your expertise. The dog's details are as follows: - Name: {dog_name} - Birth Date: {dog_birth_date} - Age: {dog_age} - Breed: {dog_breed} - Sex: {dog_sex}. Please make the answer personalized for {dog_name}.If the question is not about dog behavior or you don't know the answer, say so. Use three sentences maximum and keep the answer concise.")), MessagesPlaceholder(variable_name='messages')]) last=ChatOpenAI(client=<openai.resources.chat.completions.Completions object at 0x10ff89820>, async_client=<openai.resources.chat.completions.AsyncCompletions object at 0x10ff9b490>, openai_api_key=SecretStr('**********'), openai_proxy='')
+2024-06-06 14:00:00,664 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2024-06-06 14:00:00,678 - INFO - 127.0.0.1 - - [06/Jun/2024 14:00:00] "POST /chat HTTP/1.1" 200 -
+2024-06-06 14:00:59,136 - INFO -  * Detected change in '/Users/dlan/important/dogsup/techdogsup/backend/app.py', reloading
+2024-06-06 14:00:59,321 - INFO -  * Restarting with stat
+2024-06-06 14:02:19,837 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8081
+ * Running on http://192.168.1.11:8081
+2024-06-06 14:02:19,837 - INFO - [33mPress CTRL+C to quit[0m
+2024-06-06 14:02:19,838 - INFO -  * Restarting with stat
+2024-06-06 14:02:20,805 - WARNING -  * Debugger is active!
+2024-06-06 14:02:20,812 - INFO -  * Debugger PIN: 716-217-886
+2024-06-06 14:02:20,835 - INFO - 127.0.0.1 - - [06/Jun/2024 14:02:20] "[35m[1mPOST /chat HTTP/1.1[0m" 500 -
+2024-06-06 14:02:59,718 - INFO -  * Detected change in '/Users/dlan/important/dogsup/techdogsup/backend/app.py', reloading
+2024-06-06 14:02:59,867 - INFO -  * Restarting with stat
+2024-06-06 14:03:00,894 - WARNING -  * Debugger is active!
+2024-06-06 14:03:00,902 - INFO -  * Debugger PIN: 716-217-886
+2024-06-06 14:04:37,188 - INFO -  * Detected change in '/Users/dlan/important/dogsup/techdogsup/backend/app.py', reloading
+2024-06-06 14:04:37,347 - INFO -  * Restarting with stat
+2024-06-06 14:04:38,355 - WARNING -  * Debugger is active!
+2024-06-06 14:04:38,362 - INFO -  * Debugger PIN: 716-217-886
+2024-06-06 14:04:40,194 - INFO - 127.0.0.1 - - [06/Jun/2024 14:04:40] "[33mPOST /chat HTTP/1.1[0m" 404 -
+2024-06-06 14:04:52,235 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8081
+ * Running on http://192.168.1.11:8081
+2024-06-06 14:04:52,235 - INFO - [33mPress CTRL+C to quit[0m
+2024-06-06 14:04:52,236 - INFO -  * Restarting with stat
+2024-06-06 14:04:53,168 - WARNING -  * Debugger is active!
+2024-06-06 14:04:53,175 - INFO -  * Debugger PIN: 716-217-886
+2024-06-06 14:05:33,019 - INFO -  * Detected change in '/Users/dlan/important/dogsup/techdogsup/backend/app.py', reloading
+2024-06-06 14:05:33,183 - INFO -  * Restarting with stat
+2024-06-06 14:06:15,740 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8081
+ * Running on http://192.168.1.11:8081
+2024-06-06 14:06:15,740 - INFO - [33mPress CTRL+C to quit[0m
+2024-06-06 14:06:15,740 - INFO -  * Restarting with stat
+2024-06-06 14:06:16,668 - WARNING -  * Debugger is active!
+2024-06-06 14:06:16,677 - INFO -  * Debugger PIN: 716-217-886

@@ -1,6 +1,5 @@
 import datetime
 import logging
-import os
 from typing import List
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.document_loaders import PyPDFLoader

@@ -1,39 +1,20 @@
 import datetime
 import logging
 import os
-
-from langchain_core.messages import HumanMessage, AIMessage
+from typing import List
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader
-from langchain_community.vectorstores import FAISS
-from langchain_core.prompts import PromptTemplate, ChatMessagePromptTemplate, MessagesPlaceholder
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_core.prompts import PromptTemplate, MessagesPlaceholder
 from langchain.chains.question_answering import load_qa_chain
 from langchain.output_parsers import RegexParser
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from flask import Flask
-from flask_cors import CORS
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.memory import ChatMessageHistory
 
-app = Flask(__name__)
-CORS(app)
-
-# Set OpenAI API Key
-os.environ['OPENAI_API_KEY'] = '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'
-
 demo_ephemeral_chat_history = ChatMessageHistory()
-
-# Configure logging to output to console
-logging.basicConfig(
-    level=logging.INFO,  # Log level
-    format='%(asctime)s - %(levelname)s - %(message)s'  # Log message format
-)
-
-# Add a StreamHandler to the root logger to log to console
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.INFO)  # Set the log level for console output
-console_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-logging.getLogger().addHandler(console_handler)
+LANGCHAIN_TRACING_V2 = True
+LANGCHAIN_TRACING_V2="true"
+LANGCHAIN_API_KEY = "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"
 
 
 class Dog:
@@ -54,6 +35,10 @@ class Dog:
         return f"Dog(name={self.name}, sex={self.sex}, breed={self.breed}, birth_date={self.birth_date}, age={self.age})"
 
 
+# multimodality
+# change prompts
+# upload pdfs
+
 class LLM:
     def __init__(self, model_name: str, api_key: str):
         self.model_name = model_name
@@ -62,6 +47,8 @@ class LLM:
         self.embeddings = None
 
     def stream_openai_chat(self, dog: Dog, question: str):
+        # embed the query 
+        embeddings = self.create_or_load_facial_expression_embeddings()
 
         system_template = (
             "You are an expert in dog behavior with a deep understanding of canine psychology, training techniques, "
@@ -79,13 +66,12 @@ class LLM:
         )
 
         chain = prompt | self.chat_model
-
         # Log the state of the chain
         logging.info("Chain: %s", chain)
 
-        # Add the user message to the chat history
         demo_ephemeral_chat_history.add_user_message(question)
-
+        
+        conversation_id = "101e8e66-9c68-4858-a1b4-3b0e3c51a933"
         # Start streaming the response
         response_stream = chain.stream({
             "dog_name": dog.name,
@@ -95,8 +81,10 @@ class LLM:
             "dog_sex": dog.sex,
             "question": question,
             "messages": demo_ephemeral_chat_history.messages,
-        })
+        },
+        config={"metadata": {"conversation_id": conversation_id}},
 
+        )
 
         # Log the response chunks as they are received
         response = ""
@@ -104,35 +92,62 @@ class LLM:
             if chunk.content:
                 response += chunk.content
                 yield f"{chunk.content}"
-                
+
+        # Add the response to the chat history
         demo_ephemeral_chat_history.add_ai_message(response)
 
-    def create_or_load_facial_expression_embeddings(self):
-        if self.embeddings is None:
-            openai_embeddings = OpenAIEmbeddings()
-            if os.path.exists('facial_expression_faiss_index'):
-                # Pass the OpenAIEmbeddings instance when loading the local FAISS index
-                self.embeddings = FAISS.load_local('facial_expression_faiss_index', openai_embeddings,
-                                                   allow_dangerous_deserialization=True)
-            else:
-                documents_path = '../annika/*.pdf'
-                # Initialize the loader with the PyPDFLoader to handle PDF files
-                loader = DirectoryLoader('docs', glob=documents_path, loader_cls=PyPDFLoader)
-                documents = loader.load()
+    def create_or_load_facial_expression_embeddings(self) -> List[List[float]]:
+        # load the pdf
+        facialExpressionLoader = PyPDFLoader('./components/FacialExpressionsDogs.pdf')
+        pages = facialExpressionLoader.load()
+        # logging.info("Pages: %s", pages)
 
-                # Set the chunk size and overlap for splitting the text from the documents
-                chunk_size = 1000  # Number of characters in each text chunk
-                chunk_overlap = 100  # Number of overlapping characters between consecutive chunks
+        # split the pages into chunks
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=100,
+            length_function=len,
+            is_separator_regex=False,
+        )
 
-                # Initialize the text splitter with default separators if they're not set
-                separators = ['.', '!', '?']  # Default sentence-ending punctuation marks
-                text_splitter = RecursiveCharacterTextSplitter(separators=separators, chunk_size=chunk_size,
-                                                               chunk_overlap=chunk_overlap, length_function=len)
-                texts = text_splitter.split_documents(documents)
+        splitted_pages = text_splitter.split_documents(pages)
+        logging.info("length of chunks to embed: %s", len(splitted_pages))
 
-                self.embeddings = FAISS.from_documents(texts, openai_embeddings)
-                self.embeddings.save_local('llm_faiss_index')
-        return self.embeddings
+        # convert splitted pages to list of strings
+        texts = [page.page_content for page in splitted_pages]
+
+        # embed the chunks
+        embedding_model = OpenAIEmbeddings()
+        embeddings = embedding_model.embed_documents(texts)
+        logging.info("type of embeddings: %s", type(embeddings))
+        return embeddings
+
+        # if self.embeddings is None:
+        #     openai_embeddings = OpenAIEmbeddings()
+        #     if os.path.exists('facial_expression_faiss_index'):
+        #         # Pass the OpenAIEmbeddings instance when loading the local FAISS index
+        #         self.embeddings = FAISS.load_local('facial_expression_faiss_index', openai_embeddings,
+        #                                            allow_dangerous_deserialization=True)
+        #     else:
+        #         documents_path = '../annika/*.pdf'
+        #         # Initialize the loader with the PyPDFLoader to handle PDF files
+        #         loader = DirectoryLoader('docs', glob=documents_path, loader_cls=PyPDFLoader)
+        #         documents = loader.load()
+        # 
+        #         # Set the chunk size and overlap for splitting the text from the documents
+        #         chunk_size = 1000  # Number of characters in each text chunk
+        #         chunk_overlap = 100  # Number of overlapping characters between consecutive chunks
+        # 
+        #         # Initialize the text splitter with default separators if they're not set
+        #         separators = ['.', '!', '?']  # Default sentence-ending punctuation marks
+        #         text_splitter = RecursiveCharacterTextSplitter(separators=separators, chunk_size=chunk_size,
+        #                                                        chunk_overlap=chunk_overlap, length_function=len)
+        #         texts = text_splitter.split_documents(documents)
+        # 
+        #         self.embeddings = FAISS.from_documents(texts, openai_embeddings)
+        #         self.embeddings.save_local('llm_faiss_index')
+        #         
+        # return self.embeddings
 
     def get_relevant_docs(self, query):
         embeddings = self.create_or_load_facial_expression_embeddings()

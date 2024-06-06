@@ -140,6 +140,7 @@ def chat_endpoint():
         return jsonify({"error": "Input is missing"}), 400
 
     user = g.user
+    
 
     # Pass the user's dog to stream_openai_chat
     chat_response = llm.stream_openai_chat(user.dog, user_input)

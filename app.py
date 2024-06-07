@@ -144,7 +144,7 @@ def chat_endpoint():
     user = g.user
 
     # Pass the user's dog to stream_openai_chat
-    chat_response = llm.stream_openai_chat(user.dog, user_input)
+    chat_response = llm.stream_openai_chat(user.dog, user_input, user.uid)
 
     # Return the chat response as a text event stream
     return Response(chat_response, content_type='text/event-stream')

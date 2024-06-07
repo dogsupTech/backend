@@ -10,7 +10,7 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain.output_parsers import RegexParser
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.prompts import ChatPromptTemplate
-from langchain.memory import ChatMessageHistory
+from langchain_community.chat_message_histories import ChatMessageHistory
 
 demo_ephemeral_chat_history = ChatMessageHistory()
 LANGCHAIN_TRACING_V2 = True
@@ -47,7 +47,7 @@ class LLM:
         self.chat_model = ChatOpenAI(model=self.model_name, api_key=self.api_key)
         self.embeddings = None
 
-    def stream_openai_chat(self, dog: Dog, question: str):
+    def stream_openai_chat(self, dog: Dog, question: str, user_id:str):
         # embed the query 
         embeddings = self.create_or_load_facial_expression_embeddings()
 
@@ -72,7 +72,6 @@ class LLM:
 
         demo_ephemeral_chat_history.add_user_message(question)
 
-        conversation_id = "101e8e66-9c68-4858-a1b4-3b0e3c51a933"
         # Start streaming the response
         response_stream = chain.stream({
             "dog_name": dog.name,
@@ -83,7 +82,7 @@ class LLM:
             "question": question,
             "messages": demo_ephemeral_chat_history.messages,
         },
-            config={"metadata": {"user_id": g.user.uid}},
+            config={"metadata": {"user_id": user_id}},
 
         )
 

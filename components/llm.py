@@ -1,6 +1,8 @@
 import datetime
 import logging
 from typing import List
+
+from flask import g
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.prompts import PromptTemplate, MessagesPlaceholder
@@ -12,7 +14,7 @@ from langchain.memory import ChatMessageHistory
 
 demo_ephemeral_chat_history = ChatMessageHistory()
 LANGCHAIN_TRACING_V2 = True
-LANGCHAIN_TRACING_V2="true"
+LANGCHAIN_TRACING_V2 = "true"
 LANGCHAIN_API_KEY = "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"
 
 
@@ -69,7 +71,7 @@ class LLM:
         logging.info("Chain: %s", chain)
 
         demo_ephemeral_chat_history.add_user_message(question)
-        
+
         conversation_id = "101e8e66-9c68-4858-a1b4-3b0e3c51a933"
         # Start streaming the response
         response_stream = chain.stream({
@@ -81,7 +83,7 @@ class LLM:
             "question": question,
             "messages": demo_ephemeral_chat_history.messages,
         },
-        config={"metadata": {"conversation_id": conversation_id}},
+            config={"metadata": {"user_id": g.user.uid}},
 
         )
 

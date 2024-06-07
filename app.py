@@ -52,7 +52,8 @@ class Dog:
 
 
 class User:
-    def __init__(self, email: str, uid: str, emailActivationToken: str, email_verified: bool, updatedAt: datetime.datetime,
+    def __init__(self, email: str, uid: str, emailActivationToken: str, email_verified: bool,
+                 updatedAt: datetime.datetime,
                  vet_ai_waitlist: bool, vet_ai_is_white_listed: bool, dog: Dog):
         self.email = email
         self.uid = uid
@@ -123,6 +124,7 @@ def authorize(f):
 
         g.user = user
         return f(*args, **kwargs)
+
     return decorated_function
 
 
@@ -140,7 +142,6 @@ def chat_endpoint():
         return jsonify({"error": "Input is missing"}), 400
 
     user = g.user
-    
 
     # Pass the user's dog to stream_openai_chat
     chat_response = llm.stream_openai_chat(user.dog, user_input)

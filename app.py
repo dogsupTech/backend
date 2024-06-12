@@ -4,6 +4,12 @@ from flask import Flask, request, jsonify, Response, g
 from flask_cors import CORS
 import os
 import logging
+
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.vectorstores import FAISS
+from langchain_openai import OpenAIEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
 from components.llm import LLM
 import firebase_admin
 from firebase_admin import credentials
@@ -13,12 +19,39 @@ from functools import wraps
 app = Flask(__name__)
 CORS(app)
 
+
+def create_or_load_vector_store():
+    if os.path.exists('llm_faiss_index'):
+        # Pass the OpenAIEmbeddings instance when loading the local FAISS index
+        return FAISS.load_local('llm_faiss_index', OpenAIEmbeddings(), allow_dangerous_deserialization=True)
+
+    # if not exists, create the FAISS index from the documents and embeddings and save it
+    facialExpressionLoader = PyPDFLoader('./components/FacialExpressionsDogs.pdf')
+    pages = facialExpressionLoader.load()  # Set the chunk size and overlap for splitting the text from the documents
+
+    # split thje text
+    chunk_size = 1000  # Number of characters in each text chunk
+    chunk_overlap = 100  # Number of overlapping characters between consecutive chunks
+    # Initialize the text splitter with default separators if they're not set
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size,
+                                                   chunk_overlap=chunk_overlap, length_function=len)
+    texts = text_splitter.split_documents(pages)
+    # Create the FAISS index from the documents and embeddings
+    vector_db = FAISS.from_documents(texts, OpenAIEmbeddings())
+    vector_db.save_local('llm_faiss_index')
+    return vector_db
+
+
 os.environ['OPENAI_API_KEY'] = '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'
 
-llm = LLM(model_name="gpt-3.5-turbo", api_key=os.environ['OPENAI_API_KEY'])
+llm = LLM(model_name="gpt-3.5-turbo", api_key=os.environ['OPENAI_API_KEY'], vector_db=create_or_load_vector_store())
 
+# Set up logging to a file
 log_format = "%(asctime)s - %(levelname)s - %(message)s"
-logging.basicConfig(level=logging.INFO, format=log_format)
+logging.basicConfig(level=logging.INFO, format=log_format, handlers=[
+    logging.FileHandler("app.log"),
+    logging.StreamHandler()
+])
 
 cred = credentials.Certificate('./serviceAccountKey.json')
 fbApp = firebase_admin.initialize_app(cred)

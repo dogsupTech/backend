@@ -1,9 +1,14 @@
 import datetime
+
+from dotenv import load_dotenv
 from firebase_admin import auth
 from flask import Flask, request, jsonify, Response, g
 from flask_cors import CORS
 import os
 import logging
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.vectorstores import FAISS
@@ -44,7 +49,7 @@ def create_or_load_vector_store():
 
 os.environ['OPENAI_API_KEY'] = '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'
 
-llm = LLM(model_name="gpt-3.5-turbo", api_key=os.environ['OPENAI_API_KEY'], vector_db=create_or_load_vector_store())
+llm = LLM(model_name="gpt-4o", api_key=os.environ['OPENAI_API_KEY'], vector_db=create_or_load_vector_store())
 
 # Set up logging to a file
 log_format = "%(asctime)s - %(levelname)s - %(message)s"
@@ -56,6 +61,8 @@ logging.basicConfig(level=logging.INFO, format=log_format, handlers=[
 cred = credentials.Certificate('./serviceAccountKey.json')
 fbApp = firebase_admin.initialize_app(cred)
 db = firestore.client()
+
+load_dotenv()
 
 
 class Dog:
@@ -161,14 +168,36 @@ def authorize(f):
     return decorated_function
 
 
+# Configuration
+CLOUDINARY_CLOUD_NAME = os.getenv('CLOUDINARY_CLOUD_NAME')
+CLOUDINARY_API_KEY = os.getenv('CLOUDINARY_API_KEY')
+CLOUDINARY_API_SECRET = os.getenv('CLOUDINARY_API_SECRET')
+
+if not CLOUDINARY_CLOUD_NAME or not CLOUDINARY_API_KEY or not CLOUDINARY_API_SECRET:
+    raise ValueError("Cloudinary credentials must be set in environment variables")
+
+cloudinary.config(
+    cloud_name=CLOUDINARY_CLOUD_NAME,
+    api_key=CLOUDINARY_API_KEY,
+    api_secret=CLOUDINARY_API_SECRET
+)
+
+
 @app.route('/chat', methods=['POST'])
 @authorize
 def chat_endpoint():
-    data = request.json
-    user_input = data.get("input")
+    user_input = request.form.get('input')
+    file = request.files.get('file')
+    cloudinary_url = None
 
-    # Log the incoming request
-    logging.info("Received request: %s", data)
+    if file:
+        try:
+            upload_result = cloudinary.uploader.upload(file)
+            cloudinary_url = upload_result['secure_url']
+            logging.info("Uploaded to Cloudinary: %s", cloudinary_url)
+        except Exception as e:
+            logging.error("Error uploading to Cloudinary: %s", e)
+            return jsonify({"error": "Failed to upload to Cloudinary"}), 500  # Log the incoming request
 
     # Check if the request contains user input
     if user_input is None:
@@ -177,7 +206,7 @@ def chat_endpoint():
     user = g.user
 
     # Pass the user's dog to stream_openai_chat
-    chat_response = llm.stream_openai_chat(user.dog, user_input, user.uid)
+    chat_response = llm.stream_openai_chat(user.dog, user_input, user.uid, image_url=cloudinary_url)
 
     # Return the chat response as a text event stream
     return Response(chat_response, content_type='text/event-stream')

@@ -1,3 +1,6 @@
+import io
+
+import PyPDF2
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, Response, g
 from flask_cors import CORS
@@ -44,9 +47,7 @@ def create_or_load_vector_store():
     vector_db.save_local('llm_faiss_index')
     return vector_db
 
-
 os.environ['OPENAI_API_KEY'] = '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'
-
 llm = LLM(model_name="gpt-4o", api_key=os.environ['OPENAI_API_KEY'], vector_db=create_or_load_vector_store())
 
 # Set up logging to a file
@@ -153,6 +154,53 @@ def get_me():
     logging.info("GET /me")
     user = g.user
     return jsonify({"user": user.to_dict()}), 200
+
+
+@app.route('/upload-pdf', methods=['POST'])
+@authorize
+def upload_pdf():
+    file = request.files.get('file')
+    title = request.form.get('title')
+    author = request.form.get('author')
+    cloudinary_url = None
+
+    if not file:
+        logging.error("No file part in the request")
+        return jsonify({"error": "No file provided"}), 400
+
+    if not title or not author:
+        logging.error("Missing paper details")
+        return jsonify({"error": "Missing paper details"}), 400
+
+    try:
+        # Upload file to Cloudinary
+        upload_result = cloudinary.uploader.upload(file)
+        cloudinary_url = upload_result['secure_url']
+        logging.info("Uploaded to Cloudinary: %s", cloudinary_url)
+
+        if not cloudinary_url:
+            logging.error("Failed to obtain Cloudinary URL after upload")
+            return jsonify({"error": "Failed to obtain Cloudinary URL"}), 500
+
+    except Exception as e:
+        logging.error("Error uploading to Cloudinary: %s", e)
+        return jsonify({"error": "Failed to upload to Cloudinary"}), 500
+
+    try:
+        summary = llm.generate_summary(file)
+    except Exception as e:
+        logging.error("Error processing PDF and generating summary: %s", e)
+        return jsonify({"error": "Failed to process PDF and generate summary"}), 500
+
+    user = g.user  # Assuming this is necessary for authorization or further processing
+    try:
+        account_service.save_paper(user.uid, title, author, summary, cloudinary_url)
+    except Exception as e:
+        logging.error("Error saving paper to Firestore: %s", e)
+        return jsonify({"error": "Failed to save paper"}), 500
+
+    # Return a successful response with the Cloudinary URL and summary
+    return jsonify({"cloudinary_url": cloudinary_url, "summary": summary}), 200
 
 
 if __name__ == "__main__":

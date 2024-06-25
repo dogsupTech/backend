@@ -1,5 +1,7 @@
 import datetime
 import logging
+from uuid import uuid4
+from firebase_admin import firestore
 
 from firebase_admin import auth
 
@@ -112,3 +114,19 @@ class AccountService:
         except Exception as e:
             logging.error(f"Failed to decrement request count for user {uid}: {str(e)}")
 
+    def save_paper(self, uid: str, title: str, author: str, summary: str, pdf_url: str):
+        try:
+            logging.info(f"Saving paper for user: {uid}")
+            paper_id = str(uuid4())
+            paper_data = {
+                "title": title,
+                "author": author,
+                "summary": summary,
+                "pdf_url": pdf_url,
+                "createdAt": firestore.FieldValue.serverTimestamp()
+            }
+            self._firestore.collection('users').document(uid).collection('papers').document(paper_id).set(paper_data)
+            logging.info(f"Paper saved successfully for user: {uid}")
+        except Exception as error:
+            logging.error('Error saving paper:', error)
+            raise error

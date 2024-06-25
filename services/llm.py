@@ -5,7 +5,6 @@ from typing import Optional
 from langchain.prompts import MessagesPlaceholder
 from langchain.prompts import ChatPromptTemplate
 from langchain_community.chat_message_histories import ChatMessageHistory
-from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.vectorstores import VectorStore
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
@@ -141,3 +140,6 @@ class LLM:
         chunk_docs = [chunk[0] for chunk in relevant_chunks]
         logging.info("Documents to process: %s", chunk_docs)
         return chunk_docs
+
+    def generate_summary(self, file):
+        return "summary of the file"

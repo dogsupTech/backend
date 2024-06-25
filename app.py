@@ -15,7 +15,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from services.account import AccountService
+from services.account import AccountService, UserSaveError
 from services.llm import LLM
 import firebase_admin
 from firebase_admin import credentials
@@ -195,12 +195,35 @@ def upload_pdf():
     user = g.user  # Assuming this is necessary for authorization or further processing
     try:
         account_service.save_paper(user.uid, title, author, summary, cloudinary_url)
-    except Exception as e:
+    except UserSaveError as e:
         logging.error("Error saving paper to Firestore: %s", e)
         return jsonify({"error": "Failed to save paper"}), 500
 
     # Return a successful response with the Cloudinary URL and summary
     return jsonify({"cloudinary_url": cloudinary_url, "summary": summary}), 200
+
+
+@app.route('/saved-papers', methods=['GET'])
+@authorize
+def get_saved_papers():
+    user = g.user
+    try:
+        papers = account_service.get_papers(user.uid)
+        return jsonify({"papers": papers}), 200
+    except Exception as e:
+        logging.error("Error retrieving saved papers: %s", e)
+        return jsonify({"error": "Failed to retrieve saved papers"}), 500
+
+
+@app.route('/all-papers', methods=['GET'])
+def get_all_papers():
+    try:
+        papers = account_service.get_all_papers()
+        return jsonify({"papers": papers}), 200
+    except Exception as e:
+        logging.error("Error retrieving all papers: %s", e)
+        return jsonify({"error": "Failed to retrieve all papers"}), 500
+
 
 
 if __name__ == "__main__":

@@ -33,38 +33,40 @@ class Dog:
 
 
 class User:
-    def __init__(self, email: str, uid: str, emailActivationToken: str, email_verified: bool,
-                 updatedAt: datetime.datetime, vet_ai_waitlist: bool, vet_ai_is_white_listed: bool,
-                 dog: Dog, roles: list = None, request_count: int = 0):
+    def __init__(self, email: str, uid: str, email_activation_token: str, email_verified: bool,
+                 updated_at: datetime.datetime, vet_ai_waitlist: bool, vet_ai_is_white_listed: bool,
+                 dog: Dog = None, roles: list = None, request_count: int = 0, paper_ids: list = None):
         self.email = email
         self.uid = uid
-        self.emailActivationToken = emailActivationToken
+        self.email_activation_token = email_activation_token
         self.email_verified = email_verified
-        self.updatedAt = updatedAt
+        self.updated_at = updated_at
         self.vet_ai_waitlist = vet_ai_waitlist
         self.vet_ai_is_white_listed = vet_ai_is_white_listed
         self.dog = dog
         self.roles = roles if roles else ['user']
         self.request_count = request_count
+        self.paper_ids = paper_ids if paper_ids else []
 
     def __repr__(self):
-        return (f"User(email={self.email}, uid={self.uid}, emailActivationToken={self.emailActivationToken}, "
-                f"email_verified={self.email_verified}, updatedAt={self.updatedAt}, "
+        return (f"User(email={self.email}, uid={self.uid}, email_activation_token={self.email_activation_token}, "
+                f"email_verified={self.email_verified}, updated_at={self.updated_at}, "
                 f"vet_ai_waitlist={self.vet_ai_waitlist}, vet_ai_is_white_listed={self.vet_ai_is_white_listed}, "
-                f"dog={self.dog}, roles={self.roles}, request_count={self.request_count})")
+                f"dog={self.dog}, roles={self.roles}, request_count={self.request_count}, paper_ids={self.paper_ids})")
 
     def to_dict(self):
         return {
             "email": self.email,
             "uid": self.uid,
-            "emailActivationToken": self.emailActivationToken,
+            "email_activation_token": self.email_activation_token,
             "email_verified": self.email_verified,
-            "updatedAt": self.updatedAt.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
             "vet_ai_waitlist": self.vet_ai_waitlist,
             "vet_ai_is_white_listed": self.vet_ai_is_white_listed,
             "dog": self.dog.to_dict() if self.dog else None,
             "roles": self.roles,
-            "request_count": self.request_count
+            "request_count": self.request_count,
+            "paper_ids": self.paper_ids
         }
 
 
@@ -122,11 +124,53 @@ class AccountService:
                 "title": title,
                 "author": author,
                 "summary": summary,
-                "pdf_url": pdf_url,
-                "createdAt": firestore.FieldValue.serverTimestamp()
+                "url": pdf_url,
+                "saved_by": uid,
+                "created_at": firestore.FieldValue.serverTimestamp()
             }
-            self._firestore.collection('users').document(uid).collection('papers').document(paper_id).set(paper_data)
+            self._firestore.collection('papers').document(paper_id).set(paper_data)
+
+            # Update the user's paper_ids
+            user_ref = self._firestore.collection('users').document(uid)
+            user_ref.update({"paper_ids": firestore.ArrayUnion([paper_id])})
+
             logging.info(f"Paper saved successfully for user: {uid}")
         except Exception as error:
             logging.error('Error saving paper:', error)
-            raise error
+            raise UserSaveError() from error
+
+    def get_papers(self, uid: str):
+        try:
+            user_ref = self._firestore.collection('users').document(uid)
+            user_doc = user_ref.get()
+            if user_doc.exists:
+                user_data = user_doc.to_dict()
+                paper_ids = user_data.get('paper_ids', [])
+
+                papers = []
+                for paper_id in paper_ids:
+                    paper_ref = self._firestore.collection('papers').document(paper_id)
+                    paper_doc = paper_ref.get()
+                    if paper_doc.exists:
+                        papers.append(paper_doc.to_dict())
+
+                return papers
+            return []
+        except Exception as error:
+            logging.error('Error getting papers:', error)
+            return []
+
+    def get_all_papers(self):
+        try:
+            papers_ref = self._firestore.collection('papers')
+            papers = papers_ref.stream()
+            all_papers = [paper.to_dict() for paper in papers]
+            return all_papers
+        except Exception as error:
+            logging.error('Error getting all papers:', error)
+            return []
+
+
+class UserSaveError(Exception):
+    """Raised when there is an error saving the user to Firestore."""
+    pass

@@ -1,5 +1,7 @@
 terraform/.terraform
 .idea
 gha-creds-*.json
+app.log
+
 
 

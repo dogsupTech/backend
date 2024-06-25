@@ -62,7 +62,22 @@ db = firestore.client()
 
 load_dotenv()
 
+
 account_service = AccountService(db)
+
+
+def check_request_count(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        user = g.user
+        if user.request_count <= 0:
+            return jsonify({"error": "Insufficient request count"}), 403
+        response = f(*args, **kwargs)
+        # Decrement request count after the response is processed
+        account_service.decrement_request_count(user.uid)
+        return response
+
+    return decorated_function
 
 
 def authorize(f):
@@ -104,6 +119,7 @@ cloudinary.config(
 
 @app.route('/chat', methods=['POST'])
 @authorize
+@check_request_count
 def chat_endpoint():
     user_input = request.form.get('input')
     file = request.files.get('file')

@@ -6,6 +6,30 @@ from firebase_admin import firestore
 from firebase_admin import auth
 
 
+
+# Assuming that Intake is already defined as per the previous context
+class Intake:
+    def __init__(self, date, sentiment, abstract_summary, key_points, transcription, file_url=None):
+        self.date = date
+        self.sentiment = sentiment
+        self.abstract_summary = abstract_summary
+        self.key_points = key_points
+        self.transcription = transcription
+        self.file_url = file_url
+
+    def to_dict(self):
+        return {
+            "date": self.date.isoformat(),
+            "sentiment": self.sentiment,
+            "abstract_summary": self.abstract_summary,
+            "key_points": self.key_points,
+            "transcription": self.transcription,
+            "file_url": self.file_url,
+        }
+
+    def __repr__(self):
+        return f"Intake(date={self.date}, sentiment={self.sentiment}, abstract_summary={self.abstract_summary}, key_points={self.key_points}, transcription={self.transcription}, file_url={self.file_url})"
+
 class Dog:
     def __init__(self, birthDate: str, dogName: str, selectedBreed: str, sex: str):
         self.birth_date = datetime.datetime.strptime(birthDate, '%Y-%m-%dT%H:%M:%S.%fZ')
@@ -33,12 +57,11 @@ class Dog:
 
 
 class User:
-    def __init__(self, email: str, uid: str, email_activation_token: str, email_verified: bool,
+    def __init__(self, email: str, uid: str, email_verified: bool,
                  updated_at: datetime.datetime, vet_ai_waitlist: bool, vet_ai_is_white_listed: bool,
-                 dog: Dog = None, roles: list = None, request_count: int = 0, paper_ids: list = None):
+                 dog: Dog = None, roles: list = None, request_count: int = 0, paper_ids: list = None, **kwargs):
         self.email = email
         self.uid = uid
-        self.email_activation_token = email_activation_token
         self.email_verified = email_verified
         self.updated_at = updated_at
         self.vet_ai_waitlist = vet_ai_waitlist
@@ -49,7 +72,7 @@ class User:
         self.paper_ids = paper_ids if paper_ids else []
 
     def __repr__(self):
-        return (f"User(email={self.email}, uid={self.uid}, email_activation_token={self.email_activation_token}, "
+        return (f"User(email={self.email}, uid={self.uid},"
                 f"email_verified={self.email_verified}, updated_at={self.updated_at}, "
                 f"vet_ai_waitlist={self.vet_ai_waitlist}, vet_ai_is_white_listed={self.vet_ai_is_white_listed}, "
                 f"dog={self.dog}, roles={self.roles}, request_count={self.request_count}, paper_ids={self.paper_ids})")
@@ -58,7 +81,6 @@ class User:
         return {
             "email": self.email,
             "uid": self.uid,
-            "email_activation_token": self.email_activation_token,
             "email_verified": self.email_verified,
             "updated_at": self.updated_at.isoformat(),
             "vet_ai_waitlist": self.vet_ai_waitlist,
@@ -68,6 +90,25 @@ class User:
             "request_count": self.request_count,
             "paper_ids": self.paper_ids
         }
+
+
+class Patient:
+    def __init__(self, name: str, created_at: datetime, updated_at: datetime, uid: str):
+        self.name = name
+        self.created_at = created_at
+        self.updated_at = updated_at
+        self.uid = uid
+
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "uid": self.uid,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat()
+        }
+
+    def __repr__(self):
+        return f"Patient(name={self.name}, created_at={self.created_at}, updated_at={self.updated_at}), uid={self.uid})"
 
 
 class AccountService:
@@ -96,8 +137,10 @@ class AccountService:
 
                 dog_data = user_data.pop('dog', None)
                 dog = Dog(**dog_data) if dog_data else None
-                updatedAt = user_data.pop('updatedAt')
-                user = User(updatedAt=updatedAt, dog=dog, **user_data)
+
+                # TODO: needs to be fixed
+                user_data['updated_at'] = user_data.pop('updatedAt')  # Change the key here
+                user = User(dog=dog, **user_data)  # Pass the user_data dictionary with updated keys
                 return user
             return None
         except Exception as e:
@@ -126,7 +169,7 @@ class AccountService:
                 "summary": summary,
                 "url": pdf_url,
                 "saved_by": uid,
-                "created_at": firestore.FieldValue.serverTimestamp()
+                "created_at": firestore.SERVER_TIMESTAMP  # Correct usage
             }
             self._firestore.collection('papers').document(paper_id).set(paper_data)
 
@@ -170,7 +213,59 @@ class AccountService:
             logging.error('Error getting all papers:', error)
             return []
 
+    def save_patient(self, uid: str, patient: Patient):
+        try:
+            logging.info(f"Saving patient for user: {uid}")
+            patient_data = patient.to_dict()
+            logging.info("Patient data: %s", patient_data)
+            # Save the patient to Firestore under the user's patients collection
+            self._firestore.collection('users').document(uid).collection('patients').document(patient.uid).set(
+                patient_data)
 
+            logging.info(f"Patient saved successfully for user: {uid}")
+        except Exception as error:
+            logging.error('Error saving patient:', error)
+            raise UserSaveError() from error
+
+
+    def get_all_patients(self, uid: str):
+        try:
+            logging.info(f"Retrieving all patients for user: {uid}")
+            patients_ref = self._firestore.collection('users').document(uid).collection('patients')
+            patients = patients_ref.stream()
+            patients_list = []
+
+            for patient in patients:
+                patient_data = patient.to_dict()
+                patient_id = patient.id
+
+                # Retrieve intakes for each patient
+                intakes_ref = self._firestore.collection('users').document(uid).collection('patients').document(patient_id).collection('intakes')
+                intakes = intakes_ref.stream()
+                intakes_list = [intake.to_dict() for intake in intakes]
+
+                patient_data['intakes'] = intakes_list
+                patients_list.append(patient_data)
+
+            logging.info(f"Retrieved {len(patients_list)} patients for user: {uid}")
+            return patients_list
+        except Exception as error:
+            logging.error('Error retrieving patients:', error)
+            raise UserSaveError() from error
+
+    def save_intake(self, userId: str, patientId: str, intake: Intake):
+        try:
+            logging.info(f"Saving intake for user: {userId} and patient: {patientId}")
+            intake_data = intake.to_dict()
+            logging.info("Intake data: %s", intake_data)
+            # Save the intake to Firestore under the user's patients collection
+            self._firestore.collection('users').document(userId).collection('patients').document(patientId).collection('intakes').document().set(
+                intake_data)
+            logging.info(f"Intake saved successfully for user: {userId}")
+        except Exception as error:
+            logging.error('Error saving intake:', error)
+            raise UserSaveError() from error
+        
 class UserSaveError(Exception):
     """Raised when there is an error saving the user to Firestore."""
     pass

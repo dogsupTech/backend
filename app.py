@@ -1,6 +1,8 @@
-import io
-
-import PyPDF2
+import uuid
+from datetime import datetime
+import openai
+from openai import OpenAI
+from pydub.utils import which
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, Response, g
 from flask_cors import CORS
@@ -14,8 +16,10 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.vectorstores import FAISS
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from pydub import AudioSegment
+from werkzeug.utils import secure_filename
 
-from services.account import AccountService, UserSaveError
+from services.account import AccountService, UserSaveError, Patient, Intake
 from services.llm import LLM
 import firebase_admin
 from firebase_admin import credentials
@@ -47,6 +51,7 @@ def create_or_load_vector_store():
     vector_db.save_local('llm_faiss_index')
     return vector_db
 
+
 os.environ['OPENAI_API_KEY'] = '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'
 llm = LLM(model_name="gpt-4o", api_key=os.environ['OPENAI_API_KEY'], vector_db=create_or_load_vector_store())
 
@@ -62,7 +67,6 @@ fbApp = firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 load_dotenv()
-
 
 account_service = AccountService(db)
 
@@ -224,6 +228,220 @@ def get_all_papers():
         logging.error("Error retrieving all papers: %s", e)
         return jsonify({"error": "Failed to retrieve all papers"}), 500
 
+
+@app.route('/new-patient', methods=['POST'])
+@authorize
+def add_patient():
+    try:
+        # Extract the patient data from the request
+        data = request.json
+        patient_name = data.get('name')
+
+        if not patient_name:
+            return jsonify({"error": "Invalid request: 'name' is required"}), 400
+
+        # Create a Patient object
+        patient = Patient(name=patient_name,
+                          created_at=datetime.utcnow(),
+                          updated_at=datetime.utcnow(),
+                          uid=str(uuid.uuid4()))
+
+        # Save the patient using AccountService
+        account_service.save_patient(g.user.uid, patient)
+
+        return jsonify({"message": "Patient added successfully"}), 200
+    except Exception as e:
+        logging.error("Error adding patient: %s", e)
+        return jsonify({"error": "Failed to add patient"}), 500
+
+
+@app.route('/update-patient', methods=['POST'])
+@authorize
+def update_patient():
+    try:
+        # Extract the patient data from the request
+        data = request.json
+        patient_id = data.get('patient_id')
+        patient_name = data.get('name')
+
+        if not patient_id or not patient_name:
+            return jsonify({"error": "Invalid request: 'patient_id' and 'name' are required"}), 400
+
+        # Create a Patient object
+        patient = Patient(name=patient_name, updated_at=datetime.utcnow())
+
+        # Update the patient using AccountService
+        account_service.save_patient(g.user.uid, patient)
+
+        return jsonify({"message": "Patient updated successfully"}), 200
+    except Exception as e:
+        logging.error("Error updating patient: %s", e)
+        return jsonify({"error": "Failed to update patient"}), 500
+
+
+@app.route('/patients', methods=['GET'])
+@authorize
+def get_all_patients():
+    try:
+        logging.info("user", g.user)
+        patients = account_service.get_all_patients(g.user.uid)
+        return jsonify({"patients": patients}), 200
+    except Exception as e:
+        logging.error("Error getting patients: %s", e)
+        return jsonify({"error": "Failed to get patients"}), 500
+
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
+AudioSegment.converter = which("ffmpeg")
+
+
+
+@app.route('/intake', methods=['POST'])
+@authorize
+def intake():
+    try:
+        patient_id = request.form.get('patient_id')
+        file = request.files.get('file')
+
+        if not patient_id or not file:
+            return jsonify({"error": "Invalid request: 'patient_id' and 'file' are required"}), 400
+
+        # Save the file temporarily
+        filename = secure_filename(file.filename)
+        file_path = os.path.join("/tmp", filename)
+        file.save(file_path)
+
+        # Split the file into chunks if it's larger than 25MB
+        chunks = chunk_audio(file_path)
+
+        # Transcribe each chunk
+        transcriptions = []
+        for i, chunk in enumerate(chunks):
+            chunk_path = os.path.join("/tmp", f"chunk_{i}.mp3")
+            chunk.export(chunk_path, format="mp3")
+            with open(chunk_path, "rb") as chunk_file:
+                logging.info("Transcribing chunk %s", i)
+                transcription = transcribe_audio(chunk_file)
+                transcriptions.append(transcription)
+
+        full_transcription = " ".join(transcriptions)
+        logging.info("Full transcription completed.")
+
+        # Analyze sentiment and generate abstract summary
+        try:
+            sentiment = analyze_sentiment(full_transcription)
+            abstract_summary = generate_abstract_summary_extraction(full_transcription)
+            key_points = generate_key_points_extraction(full_transcription)
+        except Exception as e:
+            logging.error("Error analyzing sentiment or generating abstract summary: %s", e)
+            return jsonify({"error": "Failed to analyze sentiment or generate abstract summary"}), 500
+
+        # Save the intake in Firestore
+        try:
+            intake = Intake(
+                date=datetime.utcnow(),
+                sentiment=sentiment,
+                abstract_summary=abstract_summary,
+                key_points=key_points,
+                transcription=full_transcription
+            )
+            logging.info("Intake: %s", intake.to_dict())
+            account_service.save_intake(g.user.uid, patient_id, intake)
+            logging.info("Intake saved for patient %s", patient_id)
+
+        except Exception as e:
+            logging.error("Error saving intake: %s", e)
+            return jsonify({"error": "Failed to save intake"}), 500
+
+        return jsonify({
+            "message": "Intake file uploaded, transcribed, and associated successfully",
+            "transcription": full_transcription,
+            "sentiment": sentiment,
+            "abstract_summary": abstract_summary
+        }), 200
+
+    except Exception as e:
+        logging.error("Error processing intake: %s", e)
+        return jsonify({"error": "Failed to process intake"}), 500
+
+
+def chunk_audio(file_path, chunk_length_ms=60000):
+    audio = AudioSegment.from_file(file_path)
+    chunks = [audio[i:i + chunk_length_ms] for i in range(0, len(audio), chunk_length_ms)]
+    return chunks
+
+
+openai_client = OpenAI(
+    # defaults to os.environ.get("OPENAI_API_KEY")
+    # api_key="My API Key",
+)
+
+
+def transcribe_audio(file):
+    try:
+        transcription = openai_client.audio.transcriptions.create(
+            model="whisper-1",
+            file=file
+        )
+        logging.info("Transcription: %s", transcription)
+        return transcription.text
+    except Exception as e:
+        logging.error("Error transcribing audio: %s", e)
+        raise e
+
+
+def generate_key_points_extraction(transcription):
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        temperature=0,
+        messages=[
+            {
+                "role": "system",
+                "content": "You are an AI that excels at extracting key points from text. Please identify and list the main points from the following text:"
+            },
+            {
+                "role": "user",
+                "content": transcription
+            }
+        ]
+    )
+    return response.choices[0].message.content
+
+
+def generate_abstract_summary_extraction(transcription):
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        temperature=0,
+        messages=[
+            {
+                "role": "system",
+                "content": "You are an AI skilled in summarizing texts. Please provide a concise abstract summary of the following text:"
+            },
+            {
+                "role": "user",
+                "content": transcription
+            }
+        ]
+    )
+    return response.choices[0].message.content
+
+
+def analyze_sentiment(transcription):
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        temperature=0,
+        messages=[
+            {
+                "role": "system",
+                "content": "You are an AI specialized in sentiment analysis. Please analyze the sentiment of the following text and provide a summary of whether it is positive, negative, or neutral, along with a brief explanation:"
+            },
+            {
+                "role": "user",
+                "content": transcription
+            }
+        ]
+    )
+    return response.choices[0].message.content
 
 
 if __name__ == "__main__":

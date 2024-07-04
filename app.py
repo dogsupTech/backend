@@ -283,7 +283,6 @@ def update_patient():
 @authorize
 def get_all_patients():
     try:
-        logging.info("user", g.user)
         patients = account_service.get_all_patients(g.user.uid)
         return jsonify({"patients": patients}), 200
     except Exception as e:
@@ -291,9 +290,22 @@ def get_all_patients():
         return jsonify({"error": "Failed to get patients"}), 500
 
 
+@app.route('/evals', methods=['GET'])
+def run_all_evals():
+    try:
+        dataset = "ds-infectious_disease"  # Replace with your actual dataset name
+        experiment_prefix = "ds-infectious_disease-eval"  # Replace with your actual experiment prefix
+
+        results = llm.run_evals(dataset=dataset, experiment_prefix=experiment_prefix)
+        return jsonify({"run": "ok"}), 200
+    
+    except Exception as e:
+        logging.error("Error running evals: %s", e)
+        return jsonify({"error": "Failed to run evals"}), 500
+    
+    
 openai.api_key = os.getenv("OPENAI_API_KEY")
 AudioSegment.converter = which("ffmpeg")
-
 
 
 @app.route('/intake', methods=['POST'])
@@ -326,29 +338,27 @@ def intake():
 
         full_transcription = " ".join(transcriptions)
         logging.info("Full transcription completed.")
+        # Process the transcription
+        final_notes, sections = processDictation(full_transcription)
 
         # Analyze sentiment and generate abstract summary
         try:
-            sentiment = analyze_sentiment(full_transcription)
-            abstract_summary = generate_abstract_summary_extraction(full_transcription)
-            key_points = generate_key_points_extraction(full_transcription)
-        except Exception as e:
-            logging.error("Error analyzing sentiment or generating abstract summary: %s", e)
-            return jsonify({"error": "Failed to analyze sentiment or generate abstract summary"}), 500
-
-        # Save the intake in Firestore
-        try:
             intake = Intake(
                 date=datetime.utcnow(),
-                sentiment=sentiment,
-                abstract_summary=abstract_summary,
-                key_points=key_points,
-                transcription=full_transcription
+                transcription=full_transcription,
+                notes=final_notes,
+                preparation_intro=sections.get('Preparation and Introduction'),
+                history_taking=sections.get('History Taking'),
+                physical_exam=sections.get('Physical Examination'),
+                diagnostic_testing=sections.get('Diagnostic Testing'),
+                diagnosis=sections.get('Diagnosis'),
+                treatment_plan=sections.get('Treatment Plan'),
+                client_education=sections.get('Client Education and Instructions'),
+                conclusion=sections.get('Conclusion')
             )
             logging.info("Intake: %s", intake.to_dict())
             account_service.save_intake(g.user.uid, patient_id, intake)
             logging.info("Intake saved for patient %s", patient_id)
-
         except Exception as e:
             logging.error("Error saving intake: %s", e)
             return jsonify({"error": "Failed to save intake"}), 500
@@ -356,8 +366,8 @@ def intake():
         return jsonify({
             "message": "Intake file uploaded, transcribed, and associated successfully",
             "transcription": full_transcription,
-            "sentiment": sentiment,
-            "abstract_summary": abstract_summary
+            "notes": final_notes,
+            "sections": sections
         }), 200
 
     except Exception as e:
@@ -376,7 +386,6 @@ openai_client = OpenAI(
     # api_key="My API Key",
 )
 
-
 def transcribe_audio(file):
     try:
         transcription = openai_client.audio.transcriptions.create(
@@ -389,6 +398,62 @@ def transcribe_audio(file):
         logging.error("Error transcribing audio: %s", e)
         raise e
 
+
+def processDictation(transcription):
+    sections = organizeIntoSections(transcription)
+    summarizedSections = summarizeKeyPoints(sections)
+    structuredTemplate = formatIntoTemplate(summarizedSections)
+    finalNotes = reviewAndHighlight(structuredTemplate)
+    return finalNotes, sections
+
+
+def organizeIntoSections(text):
+    sections = {
+        "Preparation and Introduction": extractSection(text, "describe the preparation and introduction of the consultation"),
+        "History Taking": extractSection(text, "extract the history taking part of the consultation"),
+        "Physical Examination": extractSection(text, "describe the physical examination part of the consultation"),
+        "Diagnostic Testing": extractSection(text, "extract any diagnostic tests mentioned"),
+        "Diagnosis": extractSection(text, "describe the diagnosis given during the consultation"),
+        "Treatment Plan": extractSection(text, "extract the treatment plan discussed"),
+        "Client Education and Instructions": extractSection(text, "describe the client education and instructions provided"),
+        "Conclusion": extractSection(text, "summarize the conclusion of the consultation")
+    }
+    return sections
+
+def extractSection(text, sectionDescription):
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        temperature=0,
+        messages=[
+            {
+                "role": "system",
+                "content": f"You are an AI that extracts specific sections from a veterinary consultation transcript. Please extract the section that {sectionDescription}:"
+            },
+            {
+                "role": "user",
+                "content": text
+            }
+        ]
+    )
+    return response.choices[0].message.content.strip()
+
+
+def callOpenAISummarizeAPI(text):
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        temperature=0,
+        messages=[
+            {
+                "role": "system",
+                "content": "You are an AI skilled in summarizing texts. Please provide a concise summary of the following content:"
+            },
+            {
+                "role": "user",
+                "content": text
+            }
+        ]
+    )
+    return response.choices[0].message.content.strip()
 
 def generate_key_points_extraction(transcription):
     response = openai_client.chat.completions.create(
@@ -407,41 +472,64 @@ def generate_key_points_extraction(transcription):
     )
     return response.choices[0].message.content
 
+# Function to format the summarized sections into a structured template
+def formatIntoTemplate(sections):
+    template = f"""
+    **Preparation and Introduction:**
+    {sections['Preparation and Introduction']}
+    
+    **History Taking:**
+    {sections['History Taking']}
+    
+    **Physical Examination:**
+    {sections['Physical Examination']}
+    
+    **Diagnostic Testing:**
+    {sections['Diagnostic Testing']}
+    
+    **Diagnosis:**
+    {sections['Diagnosis']}
+    
+    **Treatment Plan:**
+    {sections['Treatment Plan']}
+    
+    **Client Education and Instructions:**
+    {sections['Client Education and Instructions']}
+    
+    **Conclusion:**
+    {sections['Conclusion']}
+    """
+    return template
 
-def generate_abstract_summary_extraction(transcription):
+
+
+# Function to review and highlight important information using OpenAI API
+def reviewAndHighlight(text):
+    highlightedTemplate = callOpenAIHighlightAPI(text)
+    return highlightedTemplate
+
+def callOpenAIHighlightAPI(text):
     response = openai_client.chat.completions.create(
         model="gpt-4",
         temperature=0,
         messages=[
             {
                 "role": "system",
-                "content": "You are an AI skilled in summarizing texts. Please provide a concise abstract summary of the following text:"
+                "content": "You are an AI specialized in highlighting critical information. Please highlight important information in the following content without removing any information:"
             },
             {
                 "role": "user",
-                "content": transcription
+                "content": text
             }
         ]
     )
-    return response.choices[0].message.content
+    return response.choices[0].message.content.strip()
 
 
-def analyze_sentiment(transcription):
-    response = openai_client.chat.completions.create(
-        model="gpt-4",
-        temperature=0,
-        messages=[
-            {
-                "role": "system",
-                "content": "You are an AI specialized in sentiment analysis. Please analyze the sentiment of the following text and provide a summary of whether it is positive, negative, or neutral, along with a brief explanation:"
-            },
-            {
-                "role": "user",
-                "content": transcription
-            }
-        ]
-    )
-    return response.choices[0].message.content
+def summarizeKeyPoints(sections):
+    for key, value in sections.items():
+        sections[key] = callOpenAISummarizeAPI(value)
+    return sections
 
 
 if __name__ == "__main__":

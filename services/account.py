@@ -7,28 +7,44 @@ from firebase_admin import auth
 
 
 
-# Assuming that Intake is already defined as per the previous context
 class Intake:
-    def __init__(self, date, sentiment, abstract_summary, key_points, transcription, file_url=None):
+    def __init__(self, date, transcription, notes, preparation_intro=None, history_taking=None, physical_exam=None, diagnostic_testing=None, diagnosis=None, treatment_plan=None, client_education=None, conclusion=None, file_url=None):
         self.date = date
-        self.sentiment = sentiment
-        self.abstract_summary = abstract_summary
-        self.key_points = key_points
         self.transcription = transcription
+        self.notes = notes
+        self.preparation_intro = preparation_intro
+        self.history_taking = history_taking
+        self.physical_exam = physical_exam
+        self.diagnostic_testing = diagnostic_testing
+        self.diagnosis = diagnosis
+        self.treatment_plan = treatment_plan
+        self.client_education = client_education
+        self.conclusion = conclusion
         self.file_url = file_url
 
     def to_dict(self):
         return {
             "date": self.date.isoformat(),
-            "sentiment": self.sentiment,
-            "abstract_summary": self.abstract_summary,
-            "key_points": self.key_points,
             "transcription": self.transcription,
+            "notes": self.notes,
+            "preparation_intro": self.preparation_intro,
+            "history_taking": self.history_taking,
+            "physical_exam": self.physical_exam,
+            "diagnostic_testing": self.diagnostic_testing,
+            "diagnosis": self.diagnosis,
+            "treatment_plan": self.treatment_plan,
+            "client_education": self.client_education,
+            "conclusion": self.conclusion,
             "file_url": self.file_url,
         }
 
     def __repr__(self):
-        return f"Intake(date={self.date}, sentiment={self.sentiment}, abstract_summary={self.abstract_summary}, key_points={self.key_points}, transcription={self.transcription}, file_url={self.file_url})"
+        return (f"Intake(date={self.date}, transcription={self.transcription}, notes={self.notes}, "
+                f"preparation_intro={self.preparation_intro}, history_taking={self.history_taking}, "
+                f"physical_exam={self.physical_exam}, diagnostic_testing={self.diagnostic_testing}, "
+                f"diagnosis={self.diagnosis}, treatment_plan={self.treatment_plan}, "
+                f"client_education={self.client_education}, conclusion={self.conclusion}, "
+                f"file_url={self.file_url})")
 
 class Dog:
     def __init__(self, birthDate: str, dogName: str, selectedBreed: str, sex: str):

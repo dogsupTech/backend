@@ -5,10 +5,14 @@ from typing import Optional
 from langchain.prompts import MessagesPlaceholder
 from langchain.prompts import ChatPromptTemplate
 from langchain_community.chat_message_histories import ChatMessageHistory
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.vectorstores import VectorStore
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
+from langsmith import evaluate
+from langsmith.evaluation import LangChainStringEvaluator
+from pydantic import json
 
 chat_history = ChatMessageHistory()
 
@@ -144,6 +148,38 @@ class LLM:
     def generate_summary(self, file):
         return "summary of the file"
     
-    
+    def run_evals(self, dataset: str, experiment_prefix: str):
+        # System template
+        system_template = (
+            "You are an expert in Diagnostic Imaging and Radiology for small animals. Answer questions about diagnostic imaging and radiology."
+        )
 
+        # Creating the ChatPromptTemplate with system and messages
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", system_template),
+                ("user", "{Question}"),
+                # MessagesPlaceholder(variable_name="messages"),
+            ]
+        )
 
+        output_parser = StrOutputParser()
+
+        # Create the evaluation chain
+        chain = prompt | self.chat_model | output_parser
+
+        # Define evaluators
+        evaluators = [
+            LangChainStringEvaluator("cot_qa"),
+        ]
+
+        # Perform evaluation
+        results = evaluate(
+            chain.invoke,
+            data=dataset,
+            evaluators=evaluators,
+            experiment_prefix=experiment_prefix,
+        )
+
+        logging.info("Results: %s", results)
+        return results

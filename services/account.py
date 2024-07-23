@@ -2,9 +2,8 @@ import datetime
 import logging
 from uuid import uuid4
 from firebase_admin import firestore
-
 from firebase_admin import auth
-
+from backend.components.llm import Dog
 
 
 class Intake:
@@ -45,31 +44,6 @@ class Intake:
                 f"diagnosis={self.diagnosis}, treatment_plan={self.treatment_plan}, "
                 f"client_education={self.client_education}, conclusion={self.conclusion}, "
                 f"file_url={self.file_url})")
-
-class Dog:
-    def __init__(self, birthDate: str, dogName: str, selectedBreed: str, sex: str):
-        self.birth_date = datetime.datetime.strptime(birthDate, '%Y-%m-%dT%H:%M:%S.%fZ')
-        self.name = dogName
-        self.breed = selectedBreed
-        self.sex = sex
-
-    @property
-    def age(self) -> int:
-        today = datetime.date.today()
-        age = today.year - self.birth_date.year - (
-            (today.month, today.day) < (self.birth_date.month, self.birth_date.day))
-        return age
-
-    def __repr__(self):
-        return f"Dog(name={self.name}, sex={self.sex}, breed={self.breed}, birth_date={self.birth_date}, age={self.age})"
-
-    def to_dict(self):
-        return {
-            "birthDate": self.birth_date.isoformat(),
-            "dogName": self.name,
-            "selectedBreed": self.breed,
-            "sex": self.sex
-        }
 
 
 class User:
@@ -126,6 +100,27 @@ class Patient:
     def __repr__(self):
         return f"Patient(name={self.name}, created_at={self.created_at}, updated_at={self.updated_at}), uid={self.uid})"
 
+
+class Clinic:
+    def __init__(self, name: str, address: str, phone: str, email: str, website: str):
+        self.name = name
+        self.address = address
+        self.phone = phone
+        self.email = email
+        self.website = website
+    
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "address": self.address,
+            "phone": self.phone,
+            "email": self.email,
+            "website": self.website
+        }
+    
+    def create_consultation(self, patient: Patient, intake: Intake):
+        pass
+    
 
 class AccountService:
     def __init__(self, db):
@@ -243,7 +238,6 @@ class AccountService:
             logging.error('Error saving patient:', error)
             raise UserSaveError() from error
 
-
     def get_all_patients(self, uid: str):
         try:
             logging.info(f"Retrieving all patients for user: {uid}")
@@ -281,6 +275,7 @@ class AccountService:
         except Exception as error:
             logging.error('Error saving intake:', error)
             raise UserSaveError() from error
+        
         
 class UserSaveError(Exception):
     """Raised when there is an error saving the user to Firestore."""

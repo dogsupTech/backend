@@ -3,7 +3,7 @@ import logging
 from uuid import uuid4
 from firebase_admin import firestore
 from firebase_admin import auth
-from backend.components.llm import Dog
+from components.llm import Dog
 
 
 class Intake:
@@ -121,6 +121,21 @@ class Clinic:
     def create_consultation(self, patient: Patient, intake: Intake):
         pass
     
+
+class ClinicService:
+    def __init__(self, db):
+        self._firestore = db
+
+    def save_clinic(self, clinic: Clinic):
+        try:
+            logging.info(f"Saving clinic: {clinic.name}")
+            clinic_data = clinic.to_dict()
+            self._firestore.collection('clinics').document(clinic.name).set(clinic_data)
+            logging.info(f"Clinic saved successfully: {clinic.name}")
+        except Exception as error:
+            logging.error('Error saving clinic:', error)
+            raise ClinicSaveError() from error
+        
 
 class AccountService:
     def __init__(self, db):
@@ -279,4 +294,9 @@ class AccountService:
         
 class UserSaveError(Exception):
     """Raised when there is an error saving the user to Firestore."""
+    pass
+
+
+class ClinicSaveError(Exception):
+    """Raised when there is an error saving the clinic to Firestore."""
     pass

@@ -59,13 +59,9 @@ class VetService:
 
             clinic_data = clinic_doc.to_dict()
 
-            user_data = {
-                "uid": user.uid,
-                "email": user.email,
-                "clinic": clinic_data
-            }
+            vet_data['clinic'] = clinic_data
 
-            return {"user": user_data, "vet_data": vet_data}
+            return {"user": vet_data}
         except Exception as e:
             logging.error("Error verifying ID token or fetching vet data: %s", e)
             return None

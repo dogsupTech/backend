@@ -58,3 +58,32 @@ def create_consultation(clinic_id, vet_id):
 def me():
     return jsonify(g.user), 200
 
+ALLOWED_EXTENSIONS = {'mp3', 'mp4', 'wav', 'ogg'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@api_bp.route('/upload-consultation', methods=['POST'])
+def upload_file():
+    # Check if the post request has the file part
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part"}), 400
+
+    file = request.files['file']
+    name = request.form.get('name', 'Unnamed Consultation')
+
+    # If the user does not select a file, the browser submits an empty file without a filename
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+
+    if file and allowed_file(file.filename):
+        logging.info("Uploading file: %s, with name: %s", file.filename, name)
+        # Here you would typically save the file and do something with the name
+        # For example:
+        # filename = secure_filename(file.filename)
+        # file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        # save_consultation_name(name, filename)  # You'd need to implement this function
+        return jsonify({"message": "File uploaded successfully", "filename": file.filename, "name": name}), 201
+    else:
+        return jsonify({"error": "File type not allowed"}), 400

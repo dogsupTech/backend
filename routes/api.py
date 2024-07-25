@@ -1,14 +1,26 @@
 # routes/api.py
 import logging
+from datetime import datetime
 from functools import wraps
+from typing import Dict, List
 
 from flask import Blueprint, request, jsonify, g
-
+from langchain.chains.base import Chain
+from langchain.chains.llm import LLMChain
+from langchain.output_parsers import StructuredOutputParser, ResponseSchema
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+from openai import OpenAI
+from pydub import AudioSegment
 from services.clinic import ClinicService
 from services.consultation import ConsultationService
 from services.vet import VetService
+from werkzeug.utils import secure_filename
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain.prompts import ChatPromptTemplate
 
 api_bp = Blueprint('api', __name__)
+
 
 def authorize(f):
     @wraps(f)
@@ -58,32 +70,198 @@ def create_consultation(clinic_id, vet_id):
 def me():
     return jsonify(g.user), 200
 
+
 ALLOWED_EXTENSIONS = {'mp3', 'mp4', 'wav', 'ogg'}
+
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 @api_bp.route('/upload-consultation', methods=['POST'])
-def upload_file():
-    # Check if the post request has the file part
-    if 'file' not in request.files:
+def upload_consultation():
+    file = get_uploaded_file(request)
+    if file is None:
         return jsonify({"error": "No file part"}), 400
 
-    file = request.files['file']
     name = request.form.get('name', 'Unnamed Consultation')
+    language = request.form.get('language', 'swedish')  # Default to Swedish if not specified
+    file_path = save_temp_file(file)
 
-    # If the user does not select a file, the browser submits an empty file without a filename
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
+    try:
+        chunks = chunk_audio(file_path)
+        transcriptions = transcribe_chunks(chunks)
 
-    if file and allowed_file(file.filename):
-        logging.info("Uploading file: %s, with name: %s", file.filename, name)
-        # Here you would typically save the file and do something with the name
-        # For example:
-        # filename = secure_filename(file.filename)
-        # file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        # save_consultation_name(name, filename)  # You'd need to implement this function
-        return jsonify({"message": "File uploaded successfully", "filename": file.filename, "name": name}), 201
-    else:
-        return jsonify({"error": "File type not allowed"}), 400
+        full_transcription = " ".join(transcriptions)
+        logging.info("Full transcription completed.")
+
+        consultation = create_consultation_object(name, full_transcription, language)
+        logging.info("Consultation object created: %s", consultation)
+
+        # Clean up the temporary file
+        os.remove(file_path)
+
+        return jsonify(consultation), 200
+    except Exception as e:
+        logging.error(f"Error processing consultation: {str(e)}")
+        # Clean up the temporary file in case of error
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        return jsonify({"error": "Error processing consultation"}), 500
+
+
+def get_uploaded_file(request):
+    if 'file' not in request.files:
+        return None
+    return request.files['file']
+
+
+def save_temp_file(file):
+    filename = secure_filename(file.filename)
+    file_path = os.path.join("/tmp", filename)
+    file.save(file_path)
+    return file_path
+
+
+def transcribe_chunks(chunks):
+    transcriptions = []
+    for i, chunk in enumerate(chunks):
+        chunk_path = os.path.join("/tmp", f"chunk_{i}.mp3")
+        chunk.export(chunk_path, format="mp3")
+        with open(chunk_path, "rb") as chunk_file:
+            logging.info("Transcribing chunk %s", i)
+            transcription = transcribe_audio(chunk_file)
+            transcriptions.append(transcription)
+    return transcriptions
+
+
+def chunk_audio(file_path, chunk_length_ms=60000):
+    audio = AudioSegment.from_file(file_path)
+    chunks = [audio[i:i + chunk_length_ms] for i in range(0, len(audio), chunk_length_ms)]
+    return chunks
+
+
+openai_client = OpenAI(
+    # defaults to os.environ.get("OPENAI_API_KEY") 
+    # api_key="My API Key",
+)
+
+
+def transcribe_audio(file):
+    try:
+        transcription = openai_client.audio.transcriptions.create(
+            model="whisper-1",
+            file=file
+        )
+        logging.info("Transcription: %s", transcription)
+        return transcription.text
+    except Exception as e:
+        logging.error("Error transcribing audio: %s", e)
+        raise e
+
+
+import openai
+import os
+
+openai.api_key = os.getenv('OPENAI_API_KEY')
+
+# Define sections and subsections
+SECTIONS = {
+    "Allmän information": [
+        "Besöksorsak", "Anamnes", "Medicinsk historia", "Kostvanor",
+        "Vaccinationsstatus", "Tidigare operationer eller behandlingar"
+    ],
+    "Fysisk undersökning": [
+        "Temperatur", "Hjärtfrekvens", "Andningsfrekvens", "Vikt",
+        "Allmänt utseende", "Detaljerade undersökningsanteckningar"
+    ],
+    "Kliniska anteckningar": [
+        "Subjektiva observationer", "Objektiva observationer",
+        "Bedömning", "Plan"
+    ]
+}
+
+# Create response schemas for each subsection
+RESPONSE_SCHEMAS = [
+    ResponseSchema(name=f"{section}_{subsection.replace(' ', '_')}",
+                   description=f"The content for {subsection} in {section}")
+    for section, subsections in SECTIONS.items()
+    for subsection in subsections
+]
+
+# Initialize the structured output parser
+PARSER = StructuredOutputParser.from_response_schemas(RESPONSE_SCHEMAS)
+
+# Create the prompt template
+TEMPLATE = """You are an AI that excels at extracting key points from text. Please identify and list the main points from the following text:
+
+Extract the following sections and their subsections from the given text. If a particular piece of information is not present, output "Not specified".
+
+Sections:
+1. Allmän information
+   - Besöksorsak
+   - Anamnes
+   - Medicinsk historia
+   - Kostvanor
+   - Vaccinationsstatus
+   - Tidigare operationer eller behandlingar
+
+2. Fysisk undersökning
+   - Temperatur
+   - Hjärtfrekvens
+   - Andningsfrekvens
+   - Vikt
+   - Allmänt utseende
+   - Detaljerade undersökningsanteckningar
+
+3. Kliniska anteckningar
+   - Subjektiva observationer
+   - Objektiva observationer
+   - Bedömning
+   - Plan
+
+Text: {transcription}
+
+Please provide your response in {language}.
+
+{format_instructions}
+"""
+
+PROMPT = ChatPromptTemplate.from_template(TEMPLATE)
+
+# Initialize the language model
+LLM = ChatOpenAI(model_name="gpt-4", temperature=0)
+
+
+# Function to organize the parsed output into structured sections
+def organize_sections(parsed_output: dict) -> dict:
+    return {
+        section: {
+            subsection.replace('_', ' '): parsed_output.get(f"{section}_{subsection.replace(' ', '_')}",
+                                                            "Not specified")
+            for subsection in subsections
+        }
+        for section, subsections in SECTIONS.items()
+    }
+
+
+# Create the extraction chain using LLMChain
+extraction_chain =  PROMPT | LLM | PARSER
+
+
+def extract_sections(transcription: str, language: str = "swedish") -> dict:
+    logging.info("PRASE", PARSER)
+    result = extraction_chain.invoke(
+        {"transcription": transcription, "language": language, "format_instructions": PARSER.get_format_instructions()})
+    logging.info("Extracted sections: %s", result)
+    return result
+
+
+def create_consultation_object(name: str, full_transcription: str, language: str = "swedish") -> dict:
+    sections = extract_sections(full_transcription, language)
+    return {
+        "name": name,
+        "full_transcript": full_transcription,
+        "sections": sections,
+        "date": datetime.utcnow().isoformat()
+    }

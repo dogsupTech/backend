@@ -1,12 +1,12 @@
-# app.py
 import os
+import logging
 from flask import Flask
 from flask_cors import CORS
 from dotenv import load_dotenv
 from firebase_admin import credentials, initialize_app
 
 from routes.api import api_bp
-from services_old.account import AccountService
+
 load_dotenv()
 
 
@@ -19,12 +19,16 @@ def create_app():
     firebase_app = initialize_app(cred)
 
     # OpenAI setup
-    # os.environ['OPENAI_API_KEY'] = 'your-openai-api-key'
-    # vector_db = create_or_load_vector_store()
-    # app.llm = LLM(model_name="gpt-4", api_key=os.environ['OPENAI_API_KEY'], vector_db=vector_db)
-    
-    # Services setup
-    app.account_service = AccountService(firebase_app)
+    openai_api_key = os.getenv('OPENAI_API_KEY')
+    if not openai_api_key:
+        raise ValueError("OPENAI_API_KEY environment variable is not set")
+
+    # Set up logging to a file
+    log_format = "%(asctime)s - %(levelname)s - %(message)s"
+    logging.basicConfig(level=logging.INFO, format=log_format, handlers=[
+        logging.FileHandler("app.log"),
+        logging.StreamHandler()
+    ])
 
     # Register blueprints
     app.register_blueprint(api_bp, url_prefix='/api/v1')

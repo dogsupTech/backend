@@ -1,6 +1,7 @@
 from firebase_admin import firestore, auth
 import logging
 
+
 class VetService:
     @staticmethod
     def create(clinic_id, data):
@@ -65,3 +66,15 @@ class VetService:
         except Exception as e:
             logging.error("Error verifying ID token or fetching vet data: %s", e)
             return None
+
+    @staticmethod
+    def save_consultation(clinic_id, vet_email, consultation_name, consultation):
+        try:
+            db = firestore.client()
+            consultation_ref = db.collection('clinics').document(clinic_id).collection('vets').document(
+                vet_email).collection('consultations').document(consultation_name)
+            consultation_ref.set(consultation)
+            logging.info("Consultation saved successfully")
+        except Exception as e:
+            logging.error("Error saving consultation: %s", e)
+            raise

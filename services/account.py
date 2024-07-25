@@ -101,77 +101,13 @@ class Patient:
         return f"Patient(name={self.name}, created_at={self.created_at}, updated_at={self.updated_at}), uid={self.uid})"
 
 
-class Clinic:
-    def __init__(self, name: str, address: str, phone: str, email: str, website: str):
-        self.name = name
-        self.address = address
-        self.phone = phone
-        self.email = email
-        self.website = website
-    
-    def to_dict(self):
-        return {
-            "name": self.name,
-            "address": self.address,
-            "phone": self.phone,
-            "email": self.email,
-            "website": self.website
-        }
-    
-    def create_consultation(self, patient: Patient, intake: Intake):
-        pass
-    
 
-class ClinicService:
-    def __init__(self, db):
-        self._firestore = db
-
-    def save_clinic(self, clinic: Clinic):
-        try:
-            logging.info(f"Saving clinic: {clinic.name}")
-            clinic_data = clinic.to_dict()
-            self._firestore.collection('clinics').document(clinic.name).set(clinic_data)
-            logging.info(f"Clinic saved successfully: {clinic.name}")
-        except Exception as error:
-            logging.error('Error saving clinic:', error)
-            raise ClinicSaveError() from error
-        
 
 class AccountService:
     def __init__(self, db):
         self._firestore = db
         self._user_requests_per_month = 100
         self._research_requests_per_month = 1000
-
-    def get_saved_user(self, id_token):
-        try:
-            decoded_token = auth.verify_id_token(id_token)
-            uid = decoded_token['uid']
-            user_ref = self._firestore.collection('users').document(uid)
-            user_doc = user_ref.get()
-            if user_doc.exists:
-                user_data = user_doc.to_dict()
-                logging.info("User data: %s", user_data)
-
-                # Check if 'roles' exists, if not, set it to ['user'] and set the request count 
-                if 'roles' not in user_data:
-                    user_data['roles'] = ['user']
-                if 'request_count' not in user_data:
-                    user_data['request_count'] = self._user_requests_per_month
-
-                user_ref.update({'roles': user_data['roles'], 'request_count': user_data['request_count']})
-
-                dog_data = user_data.pop('dog', None)
-                dog = Dog(**dog_data) if dog_data else None
-
-                # TODO: needs to be fixed
-                user_data['updated_at'] = user_data.pop('updatedAt')  # Change the key here
-                user = User(dog=dog, **user_data)  # Pass the user_data dictionary with updated keys
-                return user
-            return None
-        except Exception as e:
-            logging.error("Authorization failed: %s", str(e))
-            return None
 
     def decrement_request_count(self, uid):
         try:

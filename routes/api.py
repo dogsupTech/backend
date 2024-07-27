@@ -17,7 +17,6 @@ from langchain.prompts import ChatPromptTemplate
 import openai
 import os
 
-
 api_bp = Blueprint('api', __name__)
 
 
@@ -41,6 +40,28 @@ def authorize(f):
         return f(*args, **kwargs)
 
     return decorated_function
+
+
+# endpoint to get all consultations for a vet
+@api_bp.route('/consultations', methods=['GET'])
+@authorize
+def get_consultations():
+    user = g.user
+    clinic_id = user['user']['clinic_id']
+    vet_email = user['user']['email']
+    consultations = VetService.get_consultations(clinic_id, vet_email)
+    return jsonify(consultations), 200
+
+
+# endpoint to get a consultation by id
+@api_bp.route('/consultations/<consultation_id>', methods=['GET'])
+@authorize
+def get_consultation(consultation_id):
+    user = g.user
+    clinic_id = user['user']['clinic_id']
+    vet_email = user['user']['email']
+    consultation = VetService.get_consultation(clinic_id, vet_email, consultation_id)
+    return jsonify(consultation), 200
 
 
 @api_bp.route('/clinics', methods=['POST'])
@@ -95,7 +116,6 @@ def upload_consultation():
         chunks = chunk_audio(file_path)
         logging.info("Audio file chunked into %d parts.", len(chunks))
 
-        
         transcriptions = transcribe_chunks(chunks)
         full_transcription = " ".join(transcriptions)
         logging.info("Full transcription completed. Length of transcription: %d characters", len(full_transcription))
@@ -130,6 +150,7 @@ def upload_consultation():
             logging.info("Temporary file removed after error: %s", file_path)
         return jsonify({"error": "Error processing consultation"}), 500
 
+
 def get_uploaded_file(request):
     if 'file' not in request.files:
         return None
@@ -154,6 +175,7 @@ def transcribe_chunks(chunks: List[AudioSegment]) -> List[str]:
             transcriptions.append(transcription)
     return transcriptions
 
+
 def chunk_audio(file_path: str, chunk_length_ms: int = 60000) -> List[AudioSegment]:
     audio = AudioSegment.from_file(file_path)
     chunks = [audio[i:i + chunk_length_ms] for i in range(0, len(audio), chunk_length_ms)]
@@ -164,6 +186,7 @@ openai_client = OpenAI(
     # defaults to os.environ.get("OPENAI_API_KEY") 
     # api_key="My API Key",
 )
+
 
 def transcribe_audio(file):
     try:
@@ -176,8 +199,6 @@ def transcribe_audio(file):
     except Exception as e:
         logging.error("Error transcribing audio: %s", e)
         raise e
-
-
 
 
 openai.api_key = os.getenv('OPENAI_API_KEY')
@@ -217,7 +238,6 @@ RESPONSE_SCHEMAS = [
     ResponseSchema(name="Clinical_Notes_Plan",
                    description="The content for Plan in Clinical Notes")
 ]
-
 
 # Initialize the structured output parser
 PARSER = StructuredOutputParser.from_response_schemas(RESPONSE_SCHEMAS)

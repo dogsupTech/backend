@@ -87,3 +87,40 @@ class VetService:
         except Exception as e:
             logging.error("Error saving consultation: %s", e)
             raise
+        
+    @staticmethod
+    def get_consultation(clinic_id, vet_email, consultation_id):
+        try:
+            db = firestore.client()
+            consultation_ref = db.collection('clinics').document(clinic_id).collection('vets').document(
+                vet_email).collection('consultations').document(consultation_id)
+            consultation_doc = consultation_ref.get()
+
+            if consultation_doc.exists:
+                consultation_data = consultation_doc.to_dict()
+                return consultation_data
+            else:
+                return None
+        except Exception as e:
+            logging.error("Error getting consultation: %s", e)
+            return None
+    
+    @staticmethod   
+    def get_consultations(clinic_id, vet_email):
+        try:
+            db = firestore.client()
+            consultations_ref = db.collection('clinics').document(clinic_id).collection('vets').document(
+                vet_email).collection('consultations')
+            consultations = consultations_ref.stream()
+
+            consultations_list = []
+            for consultation in consultations:
+                consultation_data = consultation.to_dict()
+                consultation_id = consultation.id
+                consultation_data['id'] = consultation_id
+                consultations_list.append(consultation_data)
+
+            return consultations_list
+        except Exception as e:
+            logging.error("Error getting consultations: %s", e)
+            return []

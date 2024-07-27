@@ -1,3 +1,5 @@
+import uuid
+
 from firebase_admin import firestore, auth
 import logging
 
@@ -71,10 +73,17 @@ class VetService:
     def save_consultation(clinic_id, vet_email, consultation_name, consultation):
         try:
             db = firestore.client()
+            # Generate a random UUID for the consultation ID
+            consultation_id = str(uuid.uuid4())
+
+            # Reference to the consultation document with the random ID
             consultation_ref = db.collection('clinics').document(clinic_id).collection('vets').document(
-                vet_email).collection('consultations').document(consultation_name)
+                vet_email).collection('consultations').document(consultation_id)
+
+            # Save the consultation data with the random ID
             consultation_ref.set(consultation)
-            logging.info("Consultation saved successfully")
+            logging.info("Consultation saved successfully with ID: %s", consultation_id)
+            return consultation_id
         except Exception as e:
             logging.error("Error saving consultation: %s", e)
             raise

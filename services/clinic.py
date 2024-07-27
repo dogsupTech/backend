@@ -2,6 +2,7 @@
 from firebase_admin import firestore
 from uuid import uuid4
 
+
 class ClinicService:
     @staticmethod
     def create(data):

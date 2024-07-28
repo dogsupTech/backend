@@ -36,9 +36,26 @@ def authorize(f):
             return jsonify({"error": "User not found"}), 404
 
         g.user = user
+        g.clinic_id = user['user']['clinic_id']
         return f(*args, **kwargs)
 
     return decorated_function
+
+
+@api_bp.route('/clinics/users', methods=['GET'])
+@authorize
+def get_all_users():
+    clinic_id = g.clinic_id
+
+    try:
+        users = VetService.get_all_users_for_clinic(clinic_id)
+        if users:
+            return jsonify(users), 200
+        else:
+            return jsonify({"error": "No users found for this clinic"}), 404
+    except Exception as e:
+        logging.error(f"Error fetching users for clinic {clinic_id}: {str(e)}")
+        return jsonify({"error": "Error fetching users for clinic"}), 500
 
 
 @api_bp.route('/consultations/<consultation_id>', methods=['PUT'])
@@ -119,13 +136,6 @@ def me():
     return jsonify(g.user), 200
 
 
-ALLOWED_EXTENSIONS = {'mp3', 'mp4', 'wav', 'ogg', 'm4a'}
-
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
 @api_bp.route('/upload-consultation', methods=['POST'])
 @authorize
 def upload_consultation():
@@ -177,6 +187,13 @@ def upload_consultation():
             os.remove(file_path)
             logging.info("Temporary file removed after error: %s", file_path)
         return jsonify({"error": "Error processing consultation"}), 500
+
+
+ALLOWED_EXTENSIONS = {'mp3', 'mp4', 'wav', 'ogg', 'm4a'}
+
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 def get_uploaded_file(request):

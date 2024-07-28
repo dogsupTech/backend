@@ -141,3 +141,20 @@ class VetService:
         except Exception as e:
             logging.error("Error updating consultation: %s", e)
             raise
+
+    @staticmethod
+    def get_all_users_for_clinic(clinic_id: str):
+        try:
+            db = firestore.client()
+            vets_ref = db.collection('clinics').document(clinic_id).collection('vets')
+            vets = vets_ref.stream()
+
+            vet_list = []
+            for vet in vets:
+                vet_data = vet.to_dict()
+                vet_list.append(vet_data)
+
+            return vet_list
+        except Exception as e:
+            logging.error(f"Error fetching users for clinic {clinic_id}: {str(e)}")
+            return []

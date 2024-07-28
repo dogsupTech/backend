@@ -75,6 +75,7 @@ class VetService:
             db = firestore.client()
             # Generate a random UUID for the consultation ID
             consultation_id = str(uuid.uuid4())
+            consultation['id'] = consultation_id
 
             # Reference to the consultation document with the random ID
             consultation_ref = db.collection('clinics').document(clinic_id).collection('vets').document(

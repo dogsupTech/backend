@@ -317,6 +317,7 @@ pydantic==2.7.0
 pydantic_core==2.18.1
 PyDispatcher==2.0.5
 pydocstyle @ file:///Users/cbousseau/work/recipes/ci_py311/pydocstyle_1677933616104/work
+pydub==0.25.1
 pyerfa @ file:///Users/cbousseau/work/recipes/ci_py311/pyerfa_1677933632816/work
 pyflakes @ file:///Users/cbousseau/work/recipes/ci_py311/pyflakes_1677927066386/work
 Pygments==2.18.0

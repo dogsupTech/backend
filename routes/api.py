@@ -9,7 +9,6 @@ from langchain.output_parsers import StructuredOutputParser, ResponseSchema
 from openai import OpenAI
 from pydub import AudioSegment
 from services.clinic import ClinicService
-from services.consultation import ConsultationService
 from services.vet import VetService
 from werkzeug.utils import secure_filename
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
@@ -40,6 +39,35 @@ def authorize(f):
         return f(*args, **kwargs)
 
     return decorated_function
+
+
+@api_bp.route('/consultations/<consultation_id>', methods=['PUT'])
+@authorize
+def edit_consultation(consultation_id):
+    user = g.user
+    clinic_id = user['user']['clinic_id']
+    vet_email = user['user']['email']
+
+    # Get the updated consultation data from the request
+    updated_data = request.json
+    logging.info("Updating consultation with data: %s", updated_data)
+
+    try:
+        # Fetch the existing consultation
+        existing_consultation = VetService.get_consultation(clinic_id, vet_email, consultation_id)
+
+        if not existing_consultation:
+            return jsonify({"error": "Consultation not found"}), 404
+
+        # Save the updated consultation
+        VetService.update_consultation(clinic_id, vet_email, consultation_id, updated_data)
+
+        return jsonify({"message": "Consultation updated successfully",
+                        "consultation": {**existing_consultation, **updated_data}}), 200
+
+    except Exception as e:
+        logging.error(f"Error updating consultation: {str(e)}")
+        return jsonify({"error": "Error updating consultation"}), 500
 
 
 # endpoint to get all consultations for a vet

@@ -125,3 +125,19 @@ class VetService:
         except Exception as e:
             logging.error("Error getting consultations: %s", e)
             return []
+
+    @staticmethod
+    def update_consultation(clinic_id, vet_email, consultation_id, updated_data):
+        try:
+            db = firestore.client()
+            consultation_ref = db.collection('clinics').document(clinic_id).collection('vets').document(
+                vet_email).collection('consultations').document(consultation_id)
+
+            logging.info("update data: %s", updated_data)
+            # Update the consultation with the new data
+            consultation_ref.set(updated_data, merge=True)
+            logging.info("Consultation with ID: %s updated successfully", consultation_id)
+            return True
+        except Exception as e:
+            logging.error("Error updating consultation: %s", e)
+            raise

@@ -123,13 +123,6 @@ def create_vet(clinic_id):
     return jsonify({"message": "Vet created", "vet_id": vet_id}), 201
 
 
-@api_bp.route('/clinics/<clinic_id>/vets/<vet_id>/consultations', methods=['POST'])
-def create_consultation(clinic_id, vet_id):
-    data = request.json
-    consultation_id = ConsultationService.create(clinic_id, vet_id, data)
-    return jsonify({"message": "Consultation created", "consultation_id": consultation_id}), 201
-
-
 @api_bp.route('/me', methods=['GET'])
 @authorize
 def me():
@@ -292,12 +285,12 @@ PARSER = StructuredOutputParser.from_response_schemas(RESPONSE_SCHEMAS)
 # Create the prompt template
 TEMPLATE = """You are an AI that excels at extracting key points and formatting text. Please identify and list the main points from the following text:
 
-Extract the following sections and their subsections from the given text. If a particular piece of information is not present, output "Not specified".
+Extract the following sections and their subsections from the given text. Convert them to be in a veterinarian journal tone. If a particular piece of information is not present, output "Not specified".
 
 Sections:
 1. General Information
    - Visit Reason
-   - Anamnesis ()
+   - Anamnesis (Animal's medical history and previous treatments)
    - Medical History
    - Dietary Habits
    - Vaccination Status
@@ -318,11 +311,15 @@ Sections:
    - Plan 
    
 4. Formatted Transcription
-  - Format the whole text with roles identified as either 'Vet' or 'Patient'. Output json format.
+  - Format the whole text with roles identified as either 'Vet' or 'Patient'. Output in the following JSON format:
+    [
+      {{"Vet": "Vet's dialogue"}},
+      {{"Patient": "Patient's dialogue"}}
+    ]
 
 Text: {transcription}
 
-Please provide your response in {language}.
+Please provide your response in {language} with a veterinary journal tonality.
 
 {format_instructions}
 """
@@ -330,7 +327,7 @@ Please provide your response in {language}.
 PROMPT = ChatPromptTemplate.from_template(TEMPLATE)
 
 # Initialize the language model
-LLM = ChatOpenAI(model_name="gpt-4o-mini", temperature=0)
+LLM = ChatOpenAI(model_name="gpt-4o", temperature=0)
 
 
 # Function to organize the parsed output into structured sections
@@ -369,7 +366,6 @@ extraction_chain =  PROMPT | LLM | PARSER
 
 
 def extract_sections(transcription: str, language: str = "swedish") -> dict:
-    logging.info("PRASE", PARSER)
     result = extraction_chain.invoke(
         {"transcription": transcription, "language": language, "format_instructions": PARSER.get_format_instructions()})
     logging.info("Extracted sections: %s", result)

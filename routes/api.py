@@ -281,14 +281,16 @@ RESPONSE_SCHEMAS = [
     ResponseSchema(name="Clinical_Notes_Assessment",
                    description="The content for Assessment in Clinical Notes"),
     ResponseSchema(name="Clinical_Notes_Plan",
-                   description="The content for Plan in Clinical Notes")
+                   description="The content for Plan in Clinical Notes"),
+    ResponseSchema(name="Formatted_Transcription",
+                   description="Formatted transcription in JSON format with roles identified as either 'Vet' or 'Patient'")
 ]
 
 # Initialize the structured output parser
 PARSER = StructuredOutputParser.from_response_schemas(RESPONSE_SCHEMAS)
 
 # Create the prompt template
-TEMPLATE = """You are an AI that excels at extracting key points from text. Please identify and list the main points from the following text:
+TEMPLATE = """You are an AI that excels at extracting key points and formatting text. Please identify and list the main points from the following text:
 
 Extract the following sections and their subsections from the given text. If a particular piece of information is not present, output "Not specified".
 
@@ -313,7 +315,10 @@ Sections:
    - Subjective Observations
    - Objective Observations
    - Assessment
-   - Plan
+   - Plan 
+   
+4. Formatted Transcription
+  - Format the whole text with roles identified as either 'Vet' or 'Patient'. Output json format.
 
 Text: {transcription}
 
@@ -354,12 +359,13 @@ def organize_sections(parsed_output: dict) -> dict:
             "objective_observations": parsed_output.get("Clinical_Notes_Objective_Observations", "Not specified"),
             "assessment": parsed_output.get("Clinical_Notes_Assessment", "Not specified"),
             "plan": parsed_output.get("Clinical_Notes_Plan", "Not specified")
-        }
+        },
+        "formatted_transcription": parsed_output.get("Formatted_Transcription", "Not specified")
     }
 
 
 # Create the extraction chain using LLMChain
-extraction_chain = PROMPT | LLM | PARSER
+extraction_chain =  PROMPT | LLM | PARSER
 
 
 def extract_sections(transcription: str, language: str = "swedish") -> dict:

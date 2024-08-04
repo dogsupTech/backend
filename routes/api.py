@@ -285,7 +285,7 @@ PARSER = StructuredOutputParser.from_response_schemas(RESPONSE_SCHEMAS)
 # Create the prompt template
 TEMPLATE = """You are an AI that excels at extracting key points and formatting text. Please identify and list the main points from the following veterinary consultation transcription.:
 
-Extract the following sections and their subsections from the given text. If a particular piece of information is not present, output "Not specified".
+Extract the following sections and their subsections from the given text. Convert the extracted sections to veterinarian tonality. If a particular piece of information is not present, output "Not specified".
 
 Sections:
 1. General Information

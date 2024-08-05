@@ -139,7 +139,7 @@ def upload_consultation():
         return jsonify({"error": "No file part"}), 400
 
     name = request.form.get('name', 'Unnamed Consultation')
-    language = request.form.get('language', 'swedish')  # Default to Swedish if not specified
+    language = request.form.get('language', 'english')  # Default to English if not specified
     file_path = save_temp_file(file)
     logging.info("File saved to: %s", file_path)
     try:
@@ -327,13 +327,15 @@ Please provide your response in {language} with a veterinary journal tonality.
 PROMPT = ChatPromptTemplate.from_template(TEMPLATE)
 
 AI71_BASE_URL = "https://api.ai71.ai/v1/"
-AI71_API_KEY = "api71-api-0ebc8ab6-bb47-4153-a1ab-3db8ac3e09ee"
+
+AI71_API_KEY = os.getenv('AI71_API_KEY')
 
 LLM = ChatOpenAI(
     model="tiiuae/falcon-180B-chat",
     api_key=AI71_API_KEY,
     base_url=AI71_BASE_URL,
 )
+
 
 # Function to organize the parsed output into structured sections
 def organize_sections(parsed_output: dict) -> dict:
@@ -367,10 +369,10 @@ def organize_sections(parsed_output: dict) -> dict:
 
 
 # Create the extraction chain using LLMChain
-extraction_chain =  PROMPT | LLM | PARSER
+extraction_chain = PROMPT | LLM | PARSER
 
 
-def extract_sections(transcription: str, language: str = "swedish") -> dict:
+def extract_sections(transcription: str, language: str = "english") -> dict:
     result = extraction_chain.invoke(
         {"transcription": transcription, "language": language, "format_instructions": PARSER.get_format_instructions()})
     logging.info("Extracted sections: %s", result)

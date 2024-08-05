@@ -1,6 +1,9 @@
 # Backend
 
-This repository contains the backend services for DogsupTech, specifically serving as the backend for [Vetz.ai](https://vetz.ai). It is built using Flask and integrates with the Falcon 180b through Langchain for advanced language processing capabilities.
+This repository contains the backend services for DogsupTech, specifically serving as the backend for [Vetz.ai](https://vetz.ai). It is built using Flask and integrates with the Falcon 180B through Langchain for advanced language processing capabilities. Additionally, it integrates with Whisper for transcribing audio files.
+
+The backend is hosted on Google Cloud Platform (GCP), with infrastructure set up using Terraform, and continuous integration and deployment (CI/CD) managed through GitHub Actions. The corresponding frontend for this project can be found at [dogsupTech/frontend](https://github.com/dogsupTech/frontend).
+
 
 ## Table of Contents
 

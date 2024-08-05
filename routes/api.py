@@ -11,7 +11,7 @@ from pydub import AudioSegment
 from services.clinic import ClinicService
 from services.vet import VetService
 from werkzeug.utils import secure_filename
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 import openai
 import os
@@ -326,9 +326,14 @@ Please provide your response in {language} with a veterinary journal tonality.
 
 PROMPT = ChatPromptTemplate.from_template(TEMPLATE)
 
-# Initialize the language model
-LLM = ChatOpenAI(model_name="gpt-4o", temperature=0)
+AI71_BASE_URL = "https://api.ai71.ai/v1/"
+AI71_API_KEY = "api71-api-0ebc8ab6-bb47-4153-a1ab-3db8ac3e09ee"
 
+LLM = ChatOpenAI(
+    model="tiiuae/falcon-180B-chat",
+    api_key=AI71_API_KEY,
+    base_url=AI71_BASE_URL,
+)
 
 # Function to organize the parsed output into structured sections
 def organize_sections(parsed_output: dict) -> dict:

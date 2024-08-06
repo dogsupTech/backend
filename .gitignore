@@ -1,8 +1,8 @@
 terraform/.terraform
+.env
 .idea
 gha-creds-*.json
 app.log
-.env
 
 
 

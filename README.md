@@ -56,25 +56,25 @@ The backend is hosted on Google Cloud Platform (GCP), with infrastructure set up
 ## Project Structure
 
 .
-├── .github/workflows # GitHub Actions workflows
-├── components # Modular components of the application
-├── llm_faiss_index # Files related to LLM FAISS indexing
-├── notebooks # Jupyter notebooks for experiments and analysis
-├── routes # API route definitions
-├── services # Backend services and business logic
-├── terraform # Terraform configurations for infrastructure
-├── tokenCounterAI # Token counting utilities for AI services
-├── .env # Environment variables file
-├── .gitignore # Git ignore file
-├── Dockerfile # Docker configuration
-├── Makefile # Makefile for various tasks
-├── Pipfile # Pipenv file
-├── Pipfile.lock # Pipenv lock file
-├── app.py # Main Flask application entry point
-├── deploy.sh # Deployment script
-├── requirements.txt # Python dependencies
-├── retrievals.py # Data retrieval utilities
-└── serviceAccountKey.json # Firebase service account key
+─ .github/workflows # GitHub Actions workflows
+─ components # Modular components of the application
+─ llm_faiss_index # Files related to LLM FAISS indexing
+─ notebooks # Jupyter notebooks for experiments and analysis
+─ routes # API route definitions
+─ services # Backend services and business logic
+─ terraform # Terraform configurations for infrastructure
+─ tokenCounterAI # Token counting utilities for AI services
+─ .env # Environment variables file
+─ .gitignore # Git ignore file
+─ Dockerfile # Docker configuration
+─ Makefile # Makefile for various tasks
+─ Pipfile # Pipenv file
+─ Pipfile.lock # Pipenv lock file
+─ app.py # Main Flask application entry point
+─ deploy.sh # Deployment script
+─ requirements.txt # Python dependencies
+─ retrievals.py # Data retrieval utilities
+─ serviceAccountKey.json # Firebase service account key
 
 markdown
 Copy code
@@ -219,7 +219,3 @@ The application uses environment variables for configuration. Below are the requ
 
 Ensure you create a `.env` file in the root directory and populate it with the required variables.
 
-## License
-
-This project is licensed under the MIT License. See the LICENSE file for more details.
-Feel free to adjust this as necessary for your project.

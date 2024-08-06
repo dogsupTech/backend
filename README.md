@@ -209,22 +209,15 @@ The backend exposes several API endpoints. The main routes are defined in `route
 The application uses environment variables for configuration. Below are the required variables:
 
 .env file
-OPENAI_API_KEY=your_openai_api_key
-LANGCHAIN_API_KEY=your_langchain_api_key
-LANGCHAIN_TRACING_V2=True
-CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
-CLOUDINARY_API_KEY=your_cloudinary_api_key
-CLOUDINARY_API_SECRET=your_cloudinary_api_secret
-AI71_API_KEY=your_ai71_api_key
-
-csharp
-Copy code
+- OPENAI_API_KEY=your_openai_api_key
+- LANGCHAIN_API_KEY=your_langchain_api_key
+- LANGCHAIN_TRACING_V2=True
+- CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+- CLOUDINARY_API_KEY=your_cloudinary_api_key
+- CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+- AI71_API_KEY=your_ai71_api_key
 
 Ensure you create a `.env` file in the root directory and populate it with the required variables.
-
-## Contributing
-
-Contributions are welcome! Please fork the repository and create a pull request with your changes. Ensure that your code adheres to the coding standards and includes relevant tests.
 
 ## License
 

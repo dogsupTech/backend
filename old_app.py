@@ -52,7 +52,6 @@ def create_or_load_vector_store():
     return vector_db
 
 
-os.environ['OPENAI_API_KEY'] = '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'
 llm = LLM(model_name="gpt-4o", api_key=os.environ['OPENAI_API_KEY'], vector_db=create_or_load_vector_store())
 
 # Set up logging to a file

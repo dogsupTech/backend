@@ -1,3 +1,4 @@
+import json
 import os
 import logging
 from flask import Flask
@@ -15,8 +16,15 @@ def create_app():
     CORS(app)
 
     # Firebase setup
-    cred = credentials.Certificate('./serviceAccountKey.json')
+
+    # Firebase setup
+    service_account_key = os.getenv('SERVICE_ACCOUNT_KEY')
+    if not service_account_key:
+        raise ValueError("SERVICE_ACCOUNT_KEY environment variable is not set")
+
+    cred = credentials.Certificate(json.loads(service_account_key))
     firebase_app = initialize_app(cred)
+
 
     # OpenAI setup
     openai_api_key = os.getenv('OPENAI_API_KEY')
